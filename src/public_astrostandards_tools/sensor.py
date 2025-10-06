@@ -91,11 +91,21 @@ def moon_at_time(  df : pd.DataFrame, # must have the times set
         return list( (ctypes.c_double * 3)( * (np.array( sun_v ) * sun_m ) ) )
     return [ getMoon(X)  for X in df['ds50_et'] ]
 
+# -----------------------------------------------------------------------------------------------------
+def is_sunlit(  df : pd.DataFrame,
+                INTERFACE ):
+    teme_p = (ctypes.c_double * 3)()
+    def closure( ds50_et, teme ):
+        tt = (ctypes.c_double * 3)(* teme )
+        return INTERFACE.AstroFuncDll.IsPointSunlit( ds50_et, tt )
+    return [ closure(A,B) for A,B in zip( df['ds50_et'], df['teme_p'] ) ]  
+
+
 
 # -----------------------------------------------------------------------------------------------------
 def compute_looks(     
                    df_sensor : pd.DataFrame,
-                   df_object : pd.DataFrame,
+                   df_target : pd.DataFrame,
                    INTERFACE ):
     '''
     those frames must be time-aligned; that's up to you
@@ -108,27 +118,28 @@ def compute_looks(
     TOPO = INTERFACE.helpers.astrostd_named_fields( INTERFACE.AstroFuncDll, prefix='XA_TOPO_' )
 
     # check that the dates are aligned
-    del_t = np.abs( df_object['ds50_utc'].values - df_sensor['ds50_utc'].values )
+    del_t = np.abs( df_target['ds50_utc'].values - df_sensor['ds50_utc'].values )
     assert np.max(del_t) < 0.00001
     
     # concat the sensor and target dataframes and append suffixes
-    tdf = pd.concat( (df_sensor.add_suffix('_sensor'), df_object.add_suffix('_object')), 
+    tdf = pd.concat( (df_sensor.reset_index(drop=True).add_suffix('_sensor'), 
+                      df_target.reset_index(drop=True).add_suffix('_target')), 
                     axis=1 )
     
     def calcLooks( R ):
         lst = np.radians( R['lon_sensor'] ) + R['theta_sensor']
-        if 'eci_v_object' in R: 
-            eci_v_object = (ctypes.c_double * 3)( *R['eci_v_object'] )
-        elif 'teme_v_object' in R:
-            eci_v_object = (ctypes.c_double * 3)( *R['teme_v_object'] )
+        if 'eci_v_target' in R: 
+            eci_v_target = (ctypes.c_double * 3)( *R['eci_v_target'] )
+        elif 'teme_v_target' in R:
+            eci_v_target = (ctypes.c_double * 3)( *R['teme_v_target'] )
         else: 
-            eci_v_object = (ctypes.c_double * 3)(0,0,0)
+            eci_v_target = (ctypes.c_double * 3)(0,0,0)
 
         INTERFACE.AstroFuncDll.ECIToTopoComps( lst,
                                                R['lat_sensor'],
                                                (ctypes.c_double * 3) (*R['teme_p_sensor']),
-                                               (ctypes.c_double * 3) (*R['teme_p_object']),
-                                               eci_v_object,
+                                               (ctypes.c_double * 3) (*R['teme_p_target']),
+                                               eci_v_target,
                                                TOPO.data )
 
         # INTERFACE.AstroFuncDll.ECIToTopoComps( lst, lat, sen_eci, sun_p, fake_v, SUN_TOPO.data )
@@ -139,7 +150,7 @@ def compute_looks(
     return rv
 
 
-
+    
 
 # =====================================================================================================
 if __name__ == "__main__":
@@ -156,7 +167,8 @@ if __name__ == "__main__":
     astro_time.load_time_constants( '/opt/astrostandards/reduced_time_constants.dat', harness )
 
     # generate some test data
-    dates = pd.date_range( datetime.utcnow(), datetime.utcnow() + timedelta(days=1), freq='1min' )
+    dates = pd.date_range( '2025-10-01', '2025-10-15',  freq='1min' )
+    #dates = pd.date_range( datetime.utcnow(), datetime.utcnow() + timedelta(days=14), freq='1min' )
 
     # use the astro_time to initialize the dataframe with times
     # note that the sensor and target dataframes must be time aligned
@@ -197,7 +209,14 @@ if __name__ == "__main__":
     sensor_f['lon']     = -104.82
     sensor_f['height']  = 1.832
 
+    # note that we're only checking at those times that the sun is down
+    # this limits the propagation calls (more efficient)
     target_f = sgp4.propTLE_df( dates_sundown_f, L1, L2, harness ) 
-
+    # check if the target is sunlit...
+    target_f['is_sunlit'] = is_sunlit( target_f, harness )
     looks_f = compute_looks( sensor_sundown_f, target_f, harness )
-    print(looks_f)
+
+    # note that here, _target is appended to a field we pushed into compute_looks
+    # so we look for _is_sunlit_target
+    good = looks_f[ (looks_f['XA_TOPO_EL'] > 5) * (looks_f['is_sunlit_target'] == 1 ) ] 
+    print( good[['datetime_sensor','XA_TOPO_EL','XA_TOPO_AZ','is_sunlit_target']] )

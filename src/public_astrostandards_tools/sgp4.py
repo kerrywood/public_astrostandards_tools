@@ -16,6 +16,12 @@ def initTLE( tleid : float, INTERFACE ):
 
 # -----------------------------------------------------------------------------------------------------
 def propTLEToDS50s( tleid, ds50_l : list[ float ], INTERFACE ):
+    '''
+    take a tleID; it must be initialized and ready to go
+
+    take a list of ds50 UTC values (dates in AstroStandard epoch) 
+    and return <ds50><teme_pos (3)><teme_vel (3)>
+    '''
     # data holders for OUTPUT
     ds50 = INTERFACE.ctypes.c_double() 
     pos  = (INTERFACE.ctypes.c_double * 3)()
