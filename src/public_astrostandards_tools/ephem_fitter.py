@@ -99,7 +99,7 @@ class ephem_fitter( tle_fitter.tle_fitter ):
         return  {   'input_tle'  : (self.line1,self.line2),
                     'output_tle' : tle_fitter.XA_TLE_to_str( self.new_tle, self.PA ),
                     'fields'     : self.FIELDS,
-                    'dates'      : self.truth_dt,
+                    'dates'      : ( self.truth_dt[0], self.truth_dt[-1] ),
                     'points'     : len( self.truth_date),
                     'rms'        : self.ans.fun,
                     'rms_per_pt' : self.ans.fun / len( self.truth_date ) }
