@@ -58,7 +58,7 @@ def propTLE_df( dates : pd.DataFrame,
 # =====================================================================================================
 if __name__ == '__main__':
     import astro_time
-    from datetime import datetime, timedelta 
+    from datetime import datetime, timedelta, timezone 
 
     import public_astrostandards as PA
     from public_astrostandards import helpers
@@ -70,7 +70,9 @@ if __name__ == '__main__':
     L2 = '2 25544  51.6404  61.8250 0005853  25.4579 117.0387 15.50482079489028'
     
     # set up your dates
-    dates    = pd.date_range( datetime.utcnow(), datetime.utcnow() + timedelta(days=1), freq='5 min' )
+    dates    = pd.date_range(   datetime.now( timezone.utc), 
+                                datetime.now( timezone.utc ) + timedelta(days=1), 
+                                freq='5 min' )
     time_df  = astro_time.convert_times( dates, PA )
 
     # now propagate into that frame

@@ -77,7 +77,7 @@ def convert_times( datetimes : list[ datetime ] ,
 if __name__ == '__main__':
     import os
     import sys
-    from datetime import timedelta
+    from datetime import timedelta, timezone
 
     import public_astrostandards as harness
 
@@ -88,5 +88,7 @@ if __name__ == '__main__':
     load_time_constants(  '/opt/astrostandards/full_time_constants.dat' , harness )
 
     # generate some test data
-    dates = pd.date_range( datetime.utcnow(), datetime.utcnow() + timedelta(days=1), freq='5 min' )
+    dates = pd.date_range(  datetime.now( timezone.utc ), 
+                            datetime.now( timezone.utc ) + timedelta(days=1), 
+                            freq='5 min' )
     print(convert_times( dates, harness) )

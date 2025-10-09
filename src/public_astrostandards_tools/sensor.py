@@ -101,7 +101,6 @@ def is_sunlit(  df : pd.DataFrame,
     return [ closure(A,B) for A,B in zip( df['ds50_et'], df['teme_p'] ) ]  
 
 
-
 # -----------------------------------------------------------------------------------------------------
 def compute_looks(     
                    df_sensor : pd.DataFrame,
@@ -112,7 +111,6 @@ def compute_looks(
     
     each row must have 
         ds50_utc 
-        
         '''
     # we need a data holder for the output of ECIToTopoComps
     TOPO = INTERFACE.helpers.astrostd_named_fields( INTERFACE.AstroFuncDll, prefix='XA_TOPO_' )
@@ -154,7 +152,7 @@ def compute_looks(
 
 # =====================================================================================================
 if __name__ == "__main__":
-    from datetime import datetime,timedelta
+    from datetime import datetime,timedelta,timezone
     import public_astrostandards as harness
 
     import astro_time 
@@ -168,7 +166,7 @@ if __name__ == "__main__":
 
     # generate some test data
     dates = pd.date_range( '2025-10-01', '2025-10-15',  freq='1min' )
-    #dates = pd.date_range( datetime.utcnow(), datetime.utcnow() + timedelta(days=14), freq='1min' )
+    #dates = pd.date_range( datetime.now( timezone.utc ), datetime.now( timezone.utc ) + timedelta(days=14), freq='1min' )
 
     # use the astro_time to initialize the dataframe with times
     # note that the sensor and target dataframes must be time aligned
