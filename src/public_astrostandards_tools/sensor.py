@@ -111,6 +111,8 @@ def compute_looks(
     
     each row must have 
         ds50_utc 
+        lon
+        theta
         '''
     # we need a data holder for the output of ECIToTopoComps
     TOPO = INTERFACE.helpers.astrostd_named_fields( INTERFACE.AstroFuncDll, prefix='XA_TOPO_' )
