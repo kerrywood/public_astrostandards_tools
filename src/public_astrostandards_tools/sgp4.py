@@ -33,6 +33,19 @@ def propTLEToDS50s( tleid, ds50_l : list[ float ], INTERFACE ):
         return np.hstack( (dsutc, np.array(pos), np.array(vel) ) )
     return np.vstack( [propToDS50(X) for X in ds50_l ] ) 
 
+# -----------------------------------------------------------------------------------------------------
+def propTLE_byID_df( tleid, 
+                tle_df,
+                INTERFACE,
+                clear_all = True ):
+
+
+    assert initTLE( tleid, INTERFACE ) 
+    eph   = propTLEToDS50s( tleid, tle_df['ds50_utc'] , INTERFACE )
+    tle_df['teme_p'] = eph[:,1:4].tolist()
+    tle_df['teme_v'] = eph[:,4:7].tolist()
+    return tle_df 
+
 
 # -----------------------------------------------------------------------------------------------------
 def propTLE_df( dates : pd.DataFrame, 
@@ -62,8 +75,10 @@ if __name__ == '__main__':
 
     import public_astrostandards as PA
     from public_astrostandards import helpers
+
+    PA.init_all()
     
-    astro_time.load_time_constants(  '/opt/astrostandards/reduced_time_constants.dat' , PA )
+    astro_time.load_time_constants(  './reduced_time_constants.dat' , PA )
 
     # test TLE
     L1 = '1 25544U 98067A   24365.67842578  .00026430  00000-0  46140-3 0  9990'
@@ -76,4 +91,12 @@ if __name__ == '__main__':
     time_df  = astro_time.convert_times( dates, PA )
 
     # now propagate into that frame
-    print( propTLE_df( time_df.copy(), L1, L2, PA ) )
+    testout =  propTLE_df( time_df.copy(), L1, L2, PA ) 
+    print(testout)
+
+    nL1 = '1 25545U 98067A   24365.67842578  .00026430  00000-0  46140-3 4  9990'
+    nL2 = '2 25545  51.6404  61.8250 0005853  25.4579 117.0387 15.50482079489028'
+    testID = addTLE( nL1, L2, PA )
+    print(testID)
+    assert initTLE( testID, PA )
+    propTLE_byID_df( testID, testout, PA )

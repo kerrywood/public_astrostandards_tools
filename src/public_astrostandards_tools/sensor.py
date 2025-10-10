@@ -10,6 +10,8 @@ def llh_to_eci( df : list[ float ],
     '''
     given a lat / lon / alt tuple and a set of astrostandard epoch'd dates,
     give back the ECI position (TEME)
+
+    df must have columns 'lat', 'lon', 'height', and 'ds50_utc'
     '''
     sen_eci = (ctypes.c_double * 3)()
     def getECI( R ):
@@ -25,6 +27,8 @@ def llh_to_efg( df : list[ float ],
     '''
     given a lat / lon / height tuple ,
     give back the EFG position (ECEF)
+
+    df must have columns 'lat', 'lon', 'height'
     '''
     sen_efg = (ctypes.c_double * 3)()
     def getEFG( R ):
@@ -40,6 +44,8 @@ def eci_to_llh( df : list[ float ],
     '''
     given a dataframe with columns `teme_p` and `ds50_utc`, covert the 
     eci coordinates to llh
+
+    df must have 'teme_p' and 'ds50_utc'
     '''
     llh  = (ctypes.c_double * 3)()
     
