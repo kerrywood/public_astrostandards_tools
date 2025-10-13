@@ -36,6 +36,14 @@ FIT_TYPE0 = [
     'XA_TLE_MNMOTN',
     'XA_TLE_BSTAR',
     ]
+
+NON_CONSERVATIVES = [
+    'XA_TLE_AGOMGP',
+    'XA_TLE_NDOT',
+    'XA_TLE_NDOTDOT',
+    'XA_TLE_BSTAR',
+    'XA_TLE_BTERM',
+]
 #FIELDS = _FULL_FIELDS
 FIELDS = FIT_TYPE0
 
@@ -100,17 +108,21 @@ class tle_fitter:
         self.new_tle    = PA.helpers.astrostd_named_fields( PA.TleDll, prefix='XA_TLE_') 
         self.satno      = None
         self.epoch_idx  = None
+        self.tle_type   = 0
     
     def set_type0( self ):
-        self.new_tle['XA_TLE_EPHTYPE'] = 0
+        self.tle_type = 0
+        self.new_tle['XA_TLE_EPHTYPE'] = self.tle_type
         return self
 
     def set_type2( self ):
-        self.new_tle['XA_TLE_EPHTYPE'] = 2
+        self.tle_type = 2
+        self.new_tle['XA_TLE_EPHTYPE'] = self.tle_type
         return self
 
     def set_type4( self ):
-        self.new_tle['XA_TLE_EPHTYPE'] = 2
+        self.tle_type = 4
+        self.new_tle['XA_TLE_EPHTYPE'] = self.tle_type
         return self
 
     def set_satno( self, satno=99999 ):
@@ -126,6 +138,37 @@ class tle_fitter:
             self.new_tle[k] = self.init_tle[k]
         return self
 
+    def clear_nonconservatives( self ):
+        for F in NON_CONSERVATIVES: self.new_tle[F] = 0.
+        return self
+
+    def set_from_sv( self, sv ):
+        osc  = sv_to_osc( sv, self.PA )
+        mean = osc_to_mean( osc, self.PA )
+        insert_kep_to_TLE( self.new_tle, mean, self.PA )
+        if self.tle_type == 0 :
+            self.new_tle['XA_TLE_EPHTYPE'] = 0
+            self.new_tle['XA_TLE_MNMOTN'] = self.PA.AstroFuncDll.BrouwerToKozai( 
+                    self.new_tle['XA_TLE_ECCEN'], 
+                    self.new_tle['XA_TLE_INCLI'],
+                    self.new_tle['XA_TLE_MNMOTN'] )
+
+    def getLines( self ):
+        return XA_TLE_to_str( self.new_tle, self.PA )
+    
+    def initial_simplex( self, delta=0.2):
+        '''
+        take our initial fields and perturb each entry delta% in either direction (up and down
+        this should give us a good search space
+        '''
+        X     = self.get_init_fields()
+        smplx = np.ones( shape=( len(X), len(X) ) )
+        smplx += np.diag( np.ones( len(X)-1 ), -1 ) * -delta
+        smplx += np.diag( np.ones( len(X)-1 ), 1 ) * delta
+        smplx = np.vstack( (np.ones(len(X)), smplx ) )
+        smplx *= X
+        return smplx
+
 
 # =====================================================================================================
 # main
@@ -135,4 +178,6 @@ if __name__ == '__main__':
     import public_astrostandards as PA
     import astro_time
     import sgp4
+
+    A = tle_fitter()
 

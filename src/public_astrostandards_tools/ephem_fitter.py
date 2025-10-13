@@ -46,16 +46,7 @@ class ephem_fitter( tle_fitter.tle_fitter ):
         if self.epoch_idx == None:
             self.epoch_idx = self.truth_df.shape[0]//2 
         epoch_sv        = self.truth_df.iloc[ self.epoch_idx ]
-        osc_data        = tle_fitter.sv_to_osc( epoch_sv , self.PA )
-        mean_data       = tle_fitter.osc_to_mean( osc_data, self.PA )
-        # update our "fit" TLE with the new osculating data
-        self.new_tle    = tle_fitter.insert_kep_to_TLE( self.new_tle, mean_data, self.PA )
-        # if this is a type-0, we need Kozai mean motion   
-        if self.new_tle['XA_TLE_EPHTYPE'] == 0:
-            self.new_tle['XA_TLE_MNMOTN'] = self.PA.AstroFuncDll.BrouwerToKozai( 
-                    self.new_tle['XA_TLE_ECCEN'], 
-                    self.new_tle['XA_TLE_INCLI'],
-                    self.new_tle['XA_TLE_MNMOTN'] )
+        self.set_from_sv( epoch_sv )
         self.new_tle['XA_TLE_EPOCH'] = epoch_sv['ds50_utc']
         return self
 
@@ -81,19 +72,6 @@ class ephem_fitter( tle_fitter.tle_fitter ):
         self.line1      = L1
         self.line2      = L2
         return self
-
-    def initial_simplex( self, delta=0.2):
-        '''
-        take our initial fields and perturb each entry delta% in either direction (up and down
-        this should give us a good search space
-        '''
-        X     = self.get_init_fields()
-        smplx = np.ones( shape=( len(X), len(X) ) )
-        smplx += np.diag( np.ones( len(X)-1 ), -1 ) * -delta
-        smplx += np.diag( np.ones( len(X)-1 ), 1 ) * delta
-        smplx = np.vstack( (np.ones(len(X)), smplx ) )
-        smplx *= X
-        return smplx
 
     def summarize_results( self ):
         return  {   'input_tle'  : (self.line1,self.line2),
@@ -159,4 +137,4 @@ if __name__ == '__main__':
 
 
     print('Your new TLE is :')
-    print('\n'.join(output['output_tle'] ) )
+    print('\n'.join( output.getLines() ) )
