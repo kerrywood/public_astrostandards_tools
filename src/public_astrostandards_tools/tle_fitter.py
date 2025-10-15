@@ -156,7 +156,7 @@ class tle_fitter:
     def getLines( self ):
         return XA_TLE_to_str( self.new_tle, self.PA )
     
-    def initial_simplex( self, delta=0.25):
+    def initial_simplex( self, delta=0.15):
         '''
         take our initial fields and perturb each entry delta% in either direction (up and down
         this should give us a good search space
