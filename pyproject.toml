@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "public_astrostandards_tools"
+dependencies= [
+	'numpy'
+]
+version = "0.0.1"
+authors = [
+  { name="Kerry N. Wood", email="kerry.wood@asterism.ai" },
+]
+description = "Tools built on the public_astrostandards for common astro functions"
+readme = "README.md"
+requires-python = ">=3.6"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+
+[project.urls]
+Homepage = "https://github.com/kerrywood/public_astrostandards_tools"
+Issues= "https://github.com/kerrywood/public_astrostandards_tools/issues"
