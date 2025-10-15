@@ -39,7 +39,6 @@ def propTLE_byID_df( tleid,
                 INTERFACE,
                 clear_all = True ):
 
-
     assert initTLE( tleid, INTERFACE ) 
     eph   = propTLEToDS50s( tleid, tle_df['ds50_utc'] , INTERFACE )
     tle_df['teme_p'] = eph[:,1:4].tolist()

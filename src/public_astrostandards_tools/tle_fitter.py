@@ -143,6 +143,9 @@ class tle_fitter:
         return self
 
     def set_from_sv( self, sv ):
+        # set the date
+        self.new_tle['XA_TLE_EPOCH'] = sv['ds50_utc']
+        # set the elements according to the state vector
         osc  = sv_to_osc( sv, self.PA )
         mean = osc_to_mean( osc, self.PA )
         insert_kep_to_TLE( self.new_tle, mean, self.PA )
@@ -162,10 +165,16 @@ class tle_fitter:
         this should give us a good search space
         '''
         X     = self.get_init_fields()
+
+        # +/5 15% on the above diagonal
         smplx = np.ones( shape=( len(X), len(X) ) )
         smplx += np.diag( np.ones( len(X)-1 ), -1 ) * -delta
         smplx += np.diag( np.ones( len(X)-1 ), 1 ) * delta
         smplx = np.vstack( (np.ones(len(X)), smplx ) )
+
+        # random normal ...
+        #smplx = np.random.normal( 1, 0.2, size=( len(X)+1, len(X) ) )
+
         smplx *= X
         return smplx
 

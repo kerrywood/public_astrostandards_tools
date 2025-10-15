@@ -170,10 +170,10 @@ if __name__ == "__main__":
     harness.init_all()
 
     # use the TimeFunc to load the time parameters file (need to upate this periodically)
-    astro_time.load_time_constants( '/opt/astrostandards/reduced_time_constants.dat', harness )
+    astro_time.load_time_constants( './reduced_time_constants.dat', harness )
 
     # generate some test data
-    dates = pd.date_range( '2025-10-01', '2025-10-15',  freq='1min' )
+    dates = pd.date_range( '2025-10-15', '2025-10-25',  freq='1min' )
     #dates = pd.date_range( datetime.now( timezone.utc ), datetime.now( timezone.utc ) + timedelta(days=14), freq='1min' )
 
     # use the astro_time to initialize the dataframe with times
@@ -209,8 +209,10 @@ if __name__ == "__main__":
     # TEST case 2 : now that we know when sun is down, can we find those times when ISS is visible?
     # for now, ignore if it is solar illuminated
     # re-use the dates  
-    L1 = '1 25544U 98067A   25274.49975208  .00018288  00000-0  33242-3 0  9998'
-    L2 = '2 25544  51.6325 140.1428 0001055 183.8834 176.2147 15.49589290531650'
+    #L1 = '1 25544U 98067A   25288.29939280  .00010825  00000-0  20343-3 0  9998'
+    #L2 = '2 25544  51.6325  71.7910 0004132 294.0373  66.0183 15.49128438522904'
+    L1 = '1 65852U 25222B   25288.68933563  .00003928  00000-0  37425-3 0  9993'
+    L2 = '2 65852  34.9972 289.2339 0005950 115.6056 244.5265 14.92883023  2461'
     sensor_f['lat']     = 38.83 
     sensor_f['lon']     = -104.82
     sensor_f['height']  = 1.832
@@ -225,4 +227,5 @@ if __name__ == "__main__":
     # note that here, _target is appended to a field we pushed into compute_looks
     # so we look for _is_sunlit_target
     good = looks_f[ (looks_f['XA_TOPO_EL'] > 5) * (looks_f['is_sunlit_target'] == 1 ) ] 
-    print( good[['datetime_sensor','XA_TOPO_EL','XA_TOPO_AZ','is_sunlit_target']] )
+    pd.set_option('display.max_rows', None)
+    print( good[['datetime_sensor','XA_TOPO_EL','XA_TOPO_AZ','XA_TOPO_RANGE','is_sunlit_target']].head(100) )

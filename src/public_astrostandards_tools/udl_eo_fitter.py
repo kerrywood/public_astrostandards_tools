@@ -11,17 +11,16 @@ import tle_fitter
 
 # -----------------------------------------------------------------------------------------------------
 def optFunction( X, EH, return_scalar=True ):
-    PA      = EH.PA
-    XS_TLE  = PA.Cstr('',512)
+    XS_TLE  = EH.PA.Cstr('',512)
     # take the function parameters (X) and overwrite the "new_tle" values based on FIELDS 
     for k,v in zip(EH.FIELDS,X) :  EH.new_tle[ k ] = v
     # --------------------- clear state
-    PA.TleDll.TleRemoveAllSats()
-    PA.Sgp4PropDll.Sgp4RemoveAllSats()
+    EH.PA.TleDll.TleRemoveAllSats()
+    EH.PA.Sgp4PropDll.Sgp4RemoveAllSats()
     # --------------------- init our test TLE from the modified data
     tleid = PA.TleDll.TleAddSatFrArray( EH.new_tle.data, XS_TLE )
     if tleid <= 0: return np.inf
-    if PA.Sgp4PropDll.Sgp4InitSat( tleid ) != 0: return np.inf
+    if EH.PA.Sgp4PropDll.Sgp4InitSat( tleid ) != 0: return np.inf
     # --------------------- generate our test ephemeris
     test_frame    = sgp4.propTLE_byID_df( tleid, EH.date_f, EH.PA )
     looks         = sensor.compute_looks( EH.sensor_df, test_frame, EH.PA )
@@ -64,19 +63,19 @@ class eo_fitter( tle_fitter.tle_fitter ):
         self.line2      = L2
         self.obs        = inobs
 
+        # everything builds off obs; set up the frame and pull off the key date fields
         self.obs_df     = observations.prepObs( inobs, self.PA )
         self.obs_df     = observations.rotateTEMEdf( self.obs_df, self.PA )
-        self._look_vecs = np.vstack( self.obs_df['teme_lv'] )
         self.date_f     = self.obs_df[ ['ds50_utc','ds50_et','theta']].copy()
 
         # init the TLE from the lines data
         self.init_tle    = tle_fitter.TLE_str_to_XA_TLE( L1, L2, self.PA )
-        self.new_tle     = tle_fitter.TLE_str_to_XA_TLE( L1, L2, self.PA )
+        #self.new_tle     = tle_fitter.TLE_str_to_XA_TLE( L1, L2, self.PA )
+        # pick the last ob as the epoch of the TLE
         self.epoch_ds50  = self.obs_df.iloc[ -1 ]['ds50_utc']
         self.epoch_dt    = self.obs_df.iloc[ -1 ]['obTime_dt']
         epoch_sv         = self._set_new_epoch( self.epoch_ds50 )
         self.set_from_sv( epoch_sv )
-        self.new_tle['XA_TLE_EPOCH'] = epoch_sv['ds50_utc']
         # if this is a type-0, we need Kozai mean motion   
         if self.new_tle['XA_TLE_EPHTYPE'] == 0:
             self.new_tle['XA_TLE_MNMOTN'] = self.PA.AstroFuncDll.BrouwerToKozai( 
@@ -84,6 +83,7 @@ class eo_fitter( tle_fitter.tle_fitter ):
                                                 self.new_tle['XA_TLE_INCLI'],
                                                 self.new_tle['XA_TLE_MNMOTN'] )
 
+        # setup the sensor frame (for generating looks)
         self.sensor_df        = self.obs_df[['ds50_utc','senlat','senlon','senalt','theta']]
         self.sensor_df        = self.sensor_df.rename( columns = {'senlat' : 'lat','senlon' : 'lon', 'senalt' : 'height' } )
         self.sensor_df        = sensor.llh_to_eci( self.sensor_df, self.PA )
