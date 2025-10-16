@@ -158,6 +158,13 @@ if __name__ == '__main__':
             default  = False,
             action   = 'store_true',
             help     = 'print debugging info')
+
+    parser.add_argument('--satno',  "-N",
+            required = False, 
+            default  = 99999,
+            type     = int,
+            help     = 'new TLE satno')
+    
     
 
     # parse the arguments
@@ -182,7 +189,7 @@ if __name__ == '__main__':
 
     # add in the data
     FIT = FIT.set_data( args.line1, args.line2, obs )
-    FIT = FIT.set_satno(99999)
+    FIT = FIT.set_satno(args.satno)
 
     if args.verbose:
         print('Fitting')
