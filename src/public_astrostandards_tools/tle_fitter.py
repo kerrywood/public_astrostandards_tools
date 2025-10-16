@@ -9,7 +9,7 @@ import sgp4
 FIT_TYPE4 = [
         'XA_TLE_BTERM',
         'XA_TLE_NDOT',
-        'XA_TLE_AGOM_GP',
+        'XA_TLE_AGOMGP',
         'XA_TLE_INCLI',
         'XA_TLE_NODE',
         'XA_TLE_ECCEN',
@@ -112,17 +112,24 @@ class tle_fitter:
     
     def set_type0( self ):
         self.tle_type = 0
+        self.FIELDS   = FIT_TYPE0
         self.new_tle['XA_TLE_EPHTYPE'] = self.tle_type
         return self
 
     def set_type2( self ):
         self.tle_type = 2
+        self.FIELDS   = FIT_TYPE0  # <--- fields are the same as TYPE0
         self.new_tle['XA_TLE_EPHTYPE'] = self.tle_type
         return self
 
     def set_type4( self ):
         self.tle_type = 4
+        self.FIELDS   = FIT_TYPE4
         self.new_tle['XA_TLE_EPHTYPE'] = self.tle_type
+        return self
+
+    def set_AGOM( self, agom=0.01 ):
+        self.init_tle['XA_TLE_AGOMGP'] = agom
         return self
 
     def set_satno( self, satno=99999 ):
@@ -131,6 +138,7 @@ class tle_fitter:
         return self
 
     def get_init_fields( self ):
+        # if we are changing type-to-type, we might not get all the field names right
         return [ self.init_tle[X] for X in self.FIELDS ]
 
     def reset_tle( self ):

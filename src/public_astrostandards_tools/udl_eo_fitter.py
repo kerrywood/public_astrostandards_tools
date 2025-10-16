@@ -47,7 +47,7 @@ class eo_fitter( tle_fitter.tle_fitter ):
         self.line1 = None
         self.line2 = None
 
-    def _set_new_epoch( self, epoch ):
+    def _move_epoch( self, epoch ):
         ''' assume that epoch is set, and that line1, line2 are also set '''
         self.PA.TleDll.TleRemoveAllSats()
         tleid = sgp4.addTLE( self.line1, self.line2, self.PA )
@@ -77,7 +77,7 @@ class eo_fitter( tle_fitter.tle_fitter ):
         # pick the last ob as the epoch of the TLE
         self.epoch_ds50  = self.obs_df.iloc[ -1 ]['ds50_utc']
         self.epoch_dt    = self.obs_df.iloc[ -1 ]['obTime_dt']
-        epoch_sv         = self._set_new_epoch( self.epoch_ds50 )
+        epoch_sv         = self._move_epoch( self.epoch_ds50 )
         self.set_from_sv( epoch_sv )
         # if this is a type-0, we need Kozai mean motion   
         if self.new_tle['XA_TLE_EPHTYPE'] == 0:
@@ -177,19 +177,22 @@ if __name__ == '__main__':
     # init the fitter
     FIT = eo_fitter( PA ) 
     
-    # check on type
-    if type in args:
-        assert args.type in set([0,2,4])
-        if args.type == 0 : FIT.set_type0()
-        if args.type == 2 : FIT.set_type2()
-        if args.type == 4 : FIT.set_type4()
+    # check on type (this should be called before set_data to get Kozai/Brouwer right)
+    if args.type not in set([0,2,4]) :
+        print('Valid TLE types are 0,2,4.  You input {}'.format( args.type ) )
+        sys.exit(1)
+    if args.type == 0 : FIT.set_type0()
+    if args.type == 2 : FIT.set_type2()
+    if args.type == 4 : FIT.set_type4()
 
     # load up the obs
     obs    = pd.read_json( args.infile ).sort_values(by='obTime').reset_index(drop=True)    
 
     # add in the data
     FIT = FIT.set_data( args.line1, args.line2, obs )
-    FIT = FIT.set_satno(args.satno)
+    # always set your non-conservatives last
+    if args.type == 4:
+        FIT = FIT.set_satno(args.satno).set_AGOM(0.01)
 
     if args.verbose:
         print('Fitting')
