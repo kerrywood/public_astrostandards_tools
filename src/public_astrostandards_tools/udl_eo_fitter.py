@@ -26,7 +26,10 @@ def optFunction( X, EH, return_scalar=True ):
     looks         = sensor.compute_looks( EH.sensor_df, test_frame, EH.PA )
     RA_residuals  = EH.obs_df['teme_ra'] - looks['XA_TOPO_RA']
     DEC_residuals = EH.obs_df['teme_dec'] - looks['XA_TOPO_DEC']
-    # compute the RMS based on the residuals
+    # shortest angle / path computation ( -180 and 180 are NOT 360 apart )
+    RA_residuals  = (RA_residuals + 180) % 360 - 180
+    DEC_residuals = (DEC_residuals + 180) % 360 - 180
+    # compute the RMS based on the residuals (https://stackoverflow.com/questions/1878907/how-can-i-find-the-smallest-difference-between-two-angles-around-a-point#7869457)
     N   = len(RA_residuals)
     rms = np.sum( RA_residuals.values ** 2 + DEC_residuals.values ** 2 ) / ( 2 * N )
     rv  = np.sqrt( rms )
@@ -98,7 +101,7 @@ class eo_fitter( tle_fitter.tle_fitter ):
                                         self.get_init_fields(),
                                         args    = (self,True),
                                         method  = 'Nelder-Mead' ,
-                                        options = {'xatol' : 0.01, 'fatol' : 1, 'initial_simplex' : self.initial_simplex() } )
+                                        options = {'xatol' : 0.10, 'fatol' : 30/3600 * self.obs_df.shape[0], 'initial_simplex' : self.initial_simplex() } )
 
         self.ans = ans
         if ans.success:
