@@ -86,6 +86,8 @@ def moon_at_time(  df : pd.DataFrame, # must have the times set
     '''
     given a set of dates in the format output by time_helpers.convert_times, output the 
     moon position at those times
+
+    NOTE: this does not annotate or return a DataFrame; it just returns an array of positions
     '''
     sun_v  = (ctypes.c_double * 3)()
     sun_m  = ctypes.c_double()
@@ -100,6 +102,11 @@ def moon_at_time(  df : pd.DataFrame, # must have the times set
 # -----------------------------------------------------------------------------------------------------
 def is_sunlit(  df : pd.DataFrame,
                 INTERFACE ):
+    '''
+    given a DataFrame with `teme_p` and `ds50_et` set, determine if the point is sunlit
+
+    NOTE: this does not annotate or return a DataFrame; it just returns an array of positions
+    '''
     teme_p = (ctypes.c_double * 3)()
     def closure( ds50_et, teme ):
         tt = (ctypes.c_double * 3)(* teme )
@@ -119,6 +126,8 @@ def compute_looks(
         ds50_utc 
         lon
         theta
+
+    NOTE: this will return a concat'd version of both DataFrames (make copies if you're worried)
         '''
     # we need a data holder for the output of ECIToTopoComps
     TOPO = INTERFACE.helpers.astrostd_named_fields( INTERFACE.AstroFuncDll, prefix='XA_TOPO_' )

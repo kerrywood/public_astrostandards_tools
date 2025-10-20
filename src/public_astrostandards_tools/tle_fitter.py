@@ -66,9 +66,9 @@ def TLE_str_to_XA_TLE( L1 : str, L2 : str , PA ):
     XA_TLE = PA.helpers.astrostd_named_fields( PA.TleDll, prefix='XA_TLE_') 
     XS_TLE = PA.Cstr('',512)
     PA.TleDll.TleDataToArray( tleid, XA_TLE.data, XS_TLE )  # <--- note that you pass the "data" holder in
-    return XA_TLE
+    return XA_TLE, XS_TLE 
 
-# -----------------------------------------------------------------------------------------------------
+#,  -----------------------------------------------------------------------------------------------------
 def sv_to_osc( sv, PA ):
     '''
     sv : <teme_pos><teme_vel>
@@ -105,27 +105,55 @@ class tle_fitter:
         self.PA         = PA        # this is the harness for public_astrostandards
         self.FIELDS     = FIELDS    # what fields are we optimizing over (from XA_TLE)
         self.init_tle   = PA.helpers.astrostd_named_fields( PA.TleDll, prefix='XA_TLE_') 
+        self.init_str   = PA.Cstr('',512)
         self.new_tle    = PA.helpers.astrostd_named_fields( PA.TleDll, prefix='XA_TLE_') 
         self.satno      = None
         self.epoch_idx  = None
         self.tle_type   = 0
+        self.mm_kozai   = None      # we might switch between these; store both "out of band" (not in the data array)
+        self.mm_brouwer = None
+
+    def _brouwer_to_kozai( self ):
+        self.mm_kozai = self.PA.AstroFuncDll.BrouwerToKozai( 
+                                self.init_tle['XA_TLE_ECCEN'], 
+                                self.init_tle['XA_TLE_INCLI'],
+                                self.init_tle['XA_TLE_MNMOTN'] )
+
+    def _kozai_to_brouwer( self ):
+        self.mm_brouwer = self.PA.AstroFuncDll.KozaiToBrower( 
+                                self.init_tle['XA_TLE_ECCEN'], 
+                                self.init_tle['XA_TLE_INCLI'],
+                                self.init_tle['XA_TLE_MNMOTN'] )
     
+    def set_from_lines( self, L1 : str, L2 : str ):
+        self.init_tle, self.init_str = TLE_str_to_XA_TLE( L1, L2, self.PA )
+        self.tle_type  = self.init_tle['XA_TLE_EPHTYPE']
+        if self.tle_type:
+            self.mm_kozai   = self.init_tle['XA_TLE_MNMOTN']
+            self._kozai_to_brower()
+        else:
+            self.mm_brouwer = self.init_tle['XA_TLE_MNMOTN']
+            self._brouwer_to_kozai()
+            
     def set_type0( self ):
         self.tle_type = 0
         self.FIELDS   = FIT_TYPE0
-        self.new_tle['XA_TLE_EPHTYPE'] = self.tle_type
+        self.init_tle['XA_TLE_EPHTYPE'] = self.tle_type
+        self.init_tle['XA_TLE_MNMOTN']  = self.mm_kozai
         return self
 
     def set_type2( self ):
         self.tle_type = 2
         self.FIELDS   = FIT_TYPE0  # <--- fields are the same as TYPE0
-        self.new_tle['XA_TLE_EPHTYPE'] = self.tle_type
+        self.init_tle['XA_TLE_EPHTYPE'] = self.tle_type
+        self.init_tle['XA_TLE_MNMOTN']  = self.mm_brouwer
         return self
 
     def set_type4( self ):
         self.tle_type = 4
         self.FIELDS   = FIT_TYPE4
         self.new_tle['XA_TLE_EPHTYPE'] = self.tle_type
+        self.new_tle['XA_TLE_MNMOTN']  = self.mm_kozai
         return self
 
     def set_AGOM( self, agom=0.01 ):
@@ -157,12 +185,7 @@ class tle_fitter:
         osc  = sv_to_osc( sv, self.PA )
         mean = osc_to_mean( osc, self.PA )
         insert_kep_to_TLE( self.new_tle, mean, self.PA )
-        if self.tle_type == 0 :
-            self.new_tle['XA_TLE_EPHTYPE'] = 0
-            self.new_tle['XA_TLE_MNMOTN'] = self.PA.AstroFuncDll.BrouwerToKozai( 
-                    self.new_tle['XA_TLE_ECCEN'], 
-                    self.new_tle['XA_TLE_INCLI'],
-                    self.new_tle['XA_TLE_MNMOTN'] )
+        self._brouwer_to_kozai()
 
     def getLines( self ):
         return XA_TLE_to_str( self.new_tle, self.PA )
@@ -173,7 +196,6 @@ class tle_fitter:
         this should give us a good search space
         '''
         X     = self.get_init_fields()
-
         # +/5 15% on the above diagonal
         smplx = np.ones( shape=( len(X), len(X) ) )
         smplx += np.diag( np.ones( len(X)-1 ), -1 ) * -delta

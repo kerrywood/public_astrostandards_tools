@@ -22,18 +22,15 @@ def optFunction( X, EH, return_scalar=True ):
     if tleid <= 0: return np.inf
     if EH.PA.Sgp4PropDll.Sgp4InitSat( tleid ) != 0: return np.inf
     # --------------------- generate our test ephemeris
-    test_frame    = sgp4.propTLE_byID_df( tleid, EH.date_f, EH.PA )
-    looks         = sensor.compute_looks( EH.sensor_df, test_frame, EH.PA )
-    RA_residuals  = EH.obs_df['teme_ra'] - looks['XA_TOPO_RA']
-    DEC_residuals = EH.obs_df['teme_dec'] - looks['XA_TOPO_DEC']
-    # shortest angle / path computation ( -180 and 180 are NOT 360 apart )
-    RA_residuals  = (RA_residuals + 180) % 360 - 180
-    DEC_residuals = (DEC_residuals + 180) % 360 - 180
-    # compute the RMS based on the residuals (https://stackoverflow.com/questions/1878907/how-can-i-find-the-smallest-difference-between-two-angles-around-a-point#7869457)
-    N   = len(RA_residuals)
-    rms = np.sum( RA_residuals.values ** 2 + DEC_residuals.values ** 2 ) / ( 2 * N )
+    target_frame  = sgp4.propTLE_byID_df( tleid, EH.date_f, EH.PA )
+    # --------------------- generate looks from our sensor positinos
+    looks         = sensor.compute_looks( EH.sensor_df, target_frame, EH.PA )
+    # --------------------- get the residuals of these frames / obs
+    resids        = observations.residuals( EH.obs_df, looks )
+    N   = resids.shape[0]
+    rms = np.sum( resids['ra'].values ** 2 + resids['dec'].values**2 ) / (2 * N )
     rv  = np.sqrt( rms )
-    print('{:10.7f}                '.format(rv), end='\r')
+    print('RMS : {:10.7f}                '.format(rv), end='\r')
     if return_scalar : return rv
     return {'observations'  : EH.obs_df.to_dict(orient='records'), 
             'looks'         : looks.to_dict(orient='records'), 
@@ -67,24 +64,25 @@ class eo_fitter( tle_fitter.tle_fitter ):
         self.obs        = inobs
 
         # everything builds off obs; set up the frame and pull off the key date fields
-        self.obs_df     = observations.prepObs( inobs, self.PA )
-        self.obs_df     = observations.rotateTEMEdf( self.obs_df, self.PA )
+        self.obs_df     = observations.prepUDLObs( inobs, self.PA )
         self.date_f     = self.obs_df[ ['ds50_utc','ds50_et','theta']].copy()
 
         # init the TLE from the lines data
-        self.init_tle    = tle_fitter.TLE_str_to_XA_TLE( L1, L2, self.PA )
+        self.set_from_lines( L1, L2 )
+        #self.init_tle, _ = tle_fitter.TLE_str_to_XA_TLE( L1, L2, self.PA )
         #self.new_tle     = tle_fitter.TLE_str_to_XA_TLE( L1, L2, self.PA )
-        # pick the last ob as the epoch of the TLE
+
+        # pick the last ob as the epoch of the TLE (propagate your search TLE and set up data)
         self.epoch_ds50  = self.obs_df.iloc[ -1 ]['ds50_utc']
         self.epoch_dt    = self.obs_df.iloc[ -1 ]['obTime_dt']
         epoch_sv         = self._move_epoch( self.epoch_ds50 )
         self.set_from_sv( epoch_sv )
         # if this is a type-0, we need Kozai mean motion   
-        if self.new_tle['XA_TLE_EPHTYPE'] == 0:
-            self.new_tle['XA_TLE_MNMOTN'] = self.PA.AstroFuncDll.BrouwerToKozai( 
-                                                self.new_tle['XA_TLE_ECCEN'], 
-                                                self.new_tle['XA_TLE_INCLI'],
-                                                self.new_tle['XA_TLE_MNMOTN'] )
+        #if self.new_tle['XA_TLE_EPHTYPE'] == 0:
+        #    self.new_tle['XA_TLE_MNMOTN'] = self.PA.AstroFuncDll.BrouwerToKozai( 
+        #                                        self.new_tle['XA_TLE_ECCEN'], 
+        #                                        self.new_tle['XA_TLE_INCLI'],
+        #                                        self.new_tle['XA_TLE_MNMOTN'] )
 
         # setup the sensor frame (for generating looks)
         self.sensor_df        = self.obs_df[['ds50_utc','senlat','senlon','senalt','theta']]
@@ -92,16 +90,17 @@ class eo_fitter( tle_fitter.tle_fitter ):
         self.sensor_df        = sensor.llh_to_eci( self.sensor_df, self.PA )
         return self
 
-
     def fit_tle( self ):
         # -----------------------------  nelder mead -----------------------------
         # if your seed is not near the final, nelder works great (at the expense of time)
         # TODO : termination conditions should be set AND we should weight according to obs calibration
+        # for now, we're using fatol as the terminating condition (with a huge xatol).  
+        FATOL = np.sqrt(30 / 3600 * self.obs_df.shape[0] )
         ans   = scipy.optimize.minimize(optFunction, 
                                         self.get_init_fields(),
                                         args    = (self,True),
                                         method  = 'Nelder-Mead' ,
-                                        options = {'xatol' : 0.10, 'fatol' : 30/3600 * self.obs_df.shape[0], 'initial_simplex' : self.initial_simplex() } )
+                                        options = {'xatol' : FATOL, 'fatol' : FATOL, 'initial_simplex' : self.initial_simplex() } )
 
         self.ans = ans
         if ans.success:
@@ -181,22 +180,24 @@ if __name__ == '__main__':
     if args.type not in set([0,2,4]) :
         print('Valid TLE types are 0,2,4.  You input {}'.format( args.type ) )
         sys.exit(1)
-    if args.type == 0 : FIT.set_type0()
-    if args.type == 2 : FIT.set_type2()
-    if args.type == 4 : FIT.set_type4()
-
+    
     # load up the obs
     obs    = pd.read_json( args.infile ).sort_values(by='obTime').reset_index(drop=True)    
 
     # add in the data
-    FIT = FIT.set_data( args.line1, args.line2, obs )
+    FIT = FIT.set_data( args.line1, args.line2, obs ).set_satno(args.satno)
+
+    if args.type == 0 : FIT.set_type0()
+    if args.type == 2 : FIT.set_type2()
+    if args.type == 4 : FIT.set_type4()
+
     # always set your non-conservatives last
     if args.type == 4:
-        FIT = FIT.set_satno(args.satno).set_AGOM(0.01)
+        FIT = FIT.set_AGOM(0.01)
 
     if args.verbose:
         print('Fitting')
-        print('initial TLE:\n\t{}\n\t{}'.format( FIT.line1, FIT.line2 ) )
+        print('\ninitial TLE:\n\n{}\n{}'.format( FIT.line1, FIT.line2 ) )
         print('\tnew epoch : {}'.format( FIT.epoch_dt ) )
         print('\tfitting over {} obs'.format( len(obs) ) )
         print('\tspan {} -- {}'.format( FIT.obs_df.iloc[0]['obTime_dt'],
@@ -208,7 +209,7 @@ if __name__ == '__main__':
         if args.verbose: rv = FIT.final_answer
         else: rv = {}
         nl1, nl2 = FIT.getLines()
-        print('New TLE:\n\t{}\n\t{}'.format( nl1, nl2 ) )
+        print('\n\nNew TLE:\n{}\n{}'.format( nl1, nl2 ) )
         rv.update({ 'new_line1' : nl1, 'new_line2' : nl2 })
         with open( args.outfile, 'wt') as F: json.dump( rv, F, default=str )
     else:
