@@ -31,6 +31,8 @@ import pandas as pd
 _J2K_dt = datetime(year=2000, month=1, day=1, hour=12)
 _J2K_jd = 2451545.0
 
+DATE_FIELDS = ['datetime','theta','ds50_utc','ds50_et','ds50_ut1']
+
 # --------------------------------------------------------------------------------------------------------
 def dt2julian( DT : datetime ):
     del_d = ( DT - _J2K_dt ).total_seconds() / 86400
@@ -85,7 +87,8 @@ if __name__ == '__main__':
     harness.init_all()
 
     # use the TimeFunc to load the time parameters file (need to upate this periodically    )
-    load_time_constants(  '/opt/astrostandards/full_time_constants.dat' , harness )
+    #load_time_constants(  '/opt/astrostandards/full_time_constants.dat' , harness )
+    load_time_constants(  './reduced_time_constants.dat' , harness )
 
     # generate some test data
     dates = pd.date_range(  datetime.now( timezone.utc ), 

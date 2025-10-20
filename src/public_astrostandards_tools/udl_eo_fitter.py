@@ -69,20 +69,12 @@ class eo_fitter( tle_fitter.tle_fitter ):
 
         # init the TLE from the lines data
         self.set_from_lines( L1, L2 )
-        #self.init_tle, _ = tle_fitter.TLE_str_to_XA_TLE( L1, L2, self.PA )
-        #self.new_tle     = tle_fitter.TLE_str_to_XA_TLE( L1, L2, self.PA )
 
         # pick the last ob as the epoch of the TLE (propagate your search TLE and set up data)
         self.epoch_ds50  = self.obs_df.iloc[ -1 ]['ds50_utc']
         self.epoch_dt    = self.obs_df.iloc[ -1 ]['obTime_dt']
         epoch_sv         = self._move_epoch( self.epoch_ds50 )
         self.set_from_sv( epoch_sv )
-        # if this is a type-0, we need Kozai mean motion   
-        #if self.new_tle['XA_TLE_EPHTYPE'] == 0:
-        #    self.new_tle['XA_TLE_MNMOTN'] = self.PA.AstroFuncDll.BrouwerToKozai( 
-        #                                        self.new_tle['XA_TLE_ECCEN'], 
-        #                                        self.new_tle['XA_TLE_INCLI'],
-        #                                        self.new_tle['XA_TLE_MNMOTN'] )
 
         # setup the sensor frame (for generating looks)
         self.sensor_df        = self.obs_df[['ds50_utc','senlat','senlon','senalt','theta']]
@@ -95,12 +87,25 @@ class eo_fitter( tle_fitter.tle_fitter ):
         # if your seed is not near the final, nelder works great (at the expense of time)
         # TODO : termination conditions should be set AND we should weight according to obs calibration
         # for now, we're using fatol as the terminating condition (with a huge xatol).  
-        FATOL = np.sqrt(30 / 3600 * self.obs_df.shape[0] )
+        #FATOL = np.sqrt(30 / 3600 * self.obs_df.shape[0] )
+        FATOL = 1
         ans   = scipy.optimize.minimize(optFunction, 
                                         self.get_init_fields(),
                                         args    = (self,True),
                                         method  = 'Nelder-Mead' ,
                                         options = {'xatol' : FATOL, 'fatol' : FATOL, 'initial_simplex' : self.initial_simplex() } )
+
+        # -----------------------------  L-BFGS mead -----------------------------
+        # if your seed is not near the final, nelder works great (at the expense of time)
+        # TODO : termination conditions should be set AND we should weight according to obs calibration
+        # for now, we're using fatol as the terminating condition (with a huge xatol).  
+        #FATOL = np.sqrt(30 / 3600 * self.obs_df.shape[0] )
+        #FATOL = 1
+        #ans   = scipy.optimize.minimize(optFunction, 
+        #                                self.get_init_fields(),
+        #                                args    = (self,True),
+        #                                method  = 'L-BFGS-B' ,
+        #                                options = {'xatol' : FATOL, 'fatol' : FATOL, 'finite_diff_rel_step' : 1} )
 
         self.ans = ans
         if ans.success:

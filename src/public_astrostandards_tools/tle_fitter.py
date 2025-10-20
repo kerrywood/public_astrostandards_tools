@@ -4,6 +4,7 @@ import ctypes
 import numpy as np
 import scipy.optimize
 import sgp4
+import utils
 
 # what fields will we optimize over?  This doubles as a field accessor list for the optimizer..
 FIT_TYPE4 = [
@@ -68,26 +69,6 @@ def TLE_str_to_XA_TLE( L1 : str, L2 : str , PA ):
     PA.TleDll.TleDataToArray( tleid, XA_TLE.data, XS_TLE )  # <--- note that you pass the "data" holder in
     return XA_TLE, XS_TLE 
 
-#,  -----------------------------------------------------------------------------------------------------
-def sv_to_osc( sv, PA ):
-    '''
-    sv : <teme_pos><teme_vel>
-    return XA_KEP
-    '''
-    # we'll use the conversion in the astrostandards
-    XA_KEP    = PA.helpers.astrostd_named_fields( PA.AstroFuncDll,  prefix='XA_KEP_' )
-    PA.AstroFuncDll.PosVelToKep( 
-        (ctypes.c_double*3)(*sv['teme_p']), 
-        (ctypes.c_double*3)(*sv['teme_v']), 
-        XA_KEP.data )
-    return XA_KEP
-
-# -----------------------------------------------------------------------------------------------------
-def osc_to_mean( XA_KEP, PA ):
-    XA_KEP_MEAN = PA.helpers.astrostd_named_fields( PA.AstroFuncDll,  prefix='XA_KEP_' )
-    PA.AstroFuncDll.KepOscToMean( XA_KEP.data, XA_KEP_MEAN.data )
-    return XA_KEP_MEAN
-
 # -----------------------------------------------------------------------------------------------------
 def insert_kep_to_TLE( TLE_DATA, KEP_DATA, PA ):
     # now set the values from KEP_DATA into TLE_DATA
@@ -120,7 +101,7 @@ class tle_fitter:
                                 self.init_tle['XA_TLE_MNMOTN'] )
 
     def _kozai_to_brouwer( self ):
-        self.mm_brouwer = self.PA.AstroFuncDll.KozaiToBrower( 
+        self.mm_brouwer = self.PA.AstroFuncDll.KozaiToBrouwer( 
                                 self.init_tle['XA_TLE_ECCEN'], 
                                 self.init_tle['XA_TLE_INCLI'],
                                 self.init_tle['XA_TLE_MNMOTN'] )
@@ -130,7 +111,7 @@ class tle_fitter:
         self.tle_type  = self.init_tle['XA_TLE_EPHTYPE']
         if self.tle_type:
             self.mm_kozai   = self.init_tle['XA_TLE_MNMOTN']
-            self._kozai_to_brower()
+            self._kozai_to_brouwer()
         else:
             self.mm_brouwer = self.init_tle['XA_TLE_MNMOTN']
             self._brouwer_to_kozai()
@@ -182,8 +163,8 @@ class tle_fitter:
         # set the date
         self.new_tle['XA_TLE_EPOCH'] = sv['ds50_utc']
         # set the elements according to the state vector
-        osc  = sv_to_osc( sv, self.PA )
-        mean = osc_to_mean( osc, self.PA )
+        osc  = utils.sv_to_osc( sv, self.PA )
+        mean = utils.osc_to_mean( osc, self.PA )
         insert_kep_to_TLE( self.new_tle, mean, self.PA )
         self._brouwer_to_kozai()
 

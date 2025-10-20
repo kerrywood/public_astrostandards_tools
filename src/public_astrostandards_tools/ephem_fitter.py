@@ -57,10 +57,7 @@ class ephem_fitter( tle_fitter.tle_fitter ):
         '''
         dates_f = astro_time.convert_times( dates, self.PA )
         # crack open this TLE
-        self.init_tle   = tle_fitter.TLE_str_to_XA_TLE( L1, L2, self.PA )
-        #self.new_tle    = TLE_str_to_XA_TLE( L1, L2, self.PA )
-        self.new_tle    = self.PA.helpers.astrostd_named_fields( self.PA.TleDll, prefix='XA_TLE_') 
-        self.set_satno()
+        self.set_from_lines( L1, L2 )
         # clear all sats
         self.PA.TleDll.TleRemoveAllSats()
         # propagate this TLE to the dates.. this is our truth s

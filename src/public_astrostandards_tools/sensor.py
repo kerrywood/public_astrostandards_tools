@@ -165,6 +165,13 @@ def compute_looks(
     return rv
 
 
+# -----------------------------------------------------------------------------------------------------
+def prepUDLSensor( obs_df : pd.DataFrame, INTERFACE ):
+    sensor_df  = obs_df[['ds50_utc','senlat','senlon','senalt','theta']].copy()
+    sensor_df  = sensor_df.rename( columns = {'senlat' : 'lat','senlon' : 'lon', 'senalt' : 'height' } )
+    sensor_df  = llh_to_eci( sensor_df, INTERFACE )
+    return sensor_df
+
     
 
 # =====================================================================================================

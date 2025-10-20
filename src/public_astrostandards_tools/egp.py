@@ -8,7 +8,7 @@ import ephem_fitter
 
 # ----------------------------------------------------------------------------------------------------- 
 def doJob( L1, L2, DATES, PA):
-    EH = ephem_fitter.ephem_fitter( PA )
+    EH = ephem_fitter.ephem_fitter( PA ).set_satno(99999)
     EH.set_from_tle( L1, L2, DATES ).set_type0()
     out = EH.fit_tle()
     return out
