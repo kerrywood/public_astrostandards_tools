@@ -5,18 +5,20 @@ import scipy.optimize
 
 # -----------------------------------------------------------------------------------------------------
 def getUVW( sv_df : pd.DataFrame ):
-    sv_df['U_c'] = sv_df['teme_p'].apply( lambda X : X / np.linalg.norm(X))
+    # we'll do this in numpy arrays / vectors for speed (push lists to DataFrame)
+    tP = np.vstack( sv_df['teme_p'].values )
+    tV = np.vstack( sv_df['teme_v'].values )
 
-    def getW( R ):
-        tv = np.cross( R['teme_p'], R['teme_v'] ) 
-        return tv / np.linalg.norm(tv)
+    U_c = tP / np.linalg.norm( tP, axis=1 )[:,np.newaxis]
+    sv_df['U_c'] = U_c.tolist()
 
-    sv_df['W_c'] = sv_df.apply( getW, axis=1 )
+    W_c = np.cross( tP, tV, axis=1 )
+    W_c = W_c / np.linalg.norm( W_c, axis=1 )[:,np.newaxis]
+    sv_df['W_c'] = W_c.tolist()
 
-    def getV( R ):
-        return np.cross( R['W_c'], R['U_c'] )
+    V_c = np.cross( W_c, U_c, axis=1 )
+    sv_df['V_c'] = V_c.tolist()
 
-    sv_df['V_c'] = sv_df.apply( getV, axis=1 )
     return sv_df 
 
 
@@ -36,14 +38,16 @@ if __name__ == '__main__':
     L1 = lines[0].strip()
     L2 = lines[1].strip()
 
-    # obs 
+    # load obs 
     obs_df    = pd.read_json('../../tests/27566.json.gz').sort_values(by='obTime')
     # reformat UDL obs (these are our actual TEST obs ; from a sensor)
     obs_df    = observations.prepUDLObs( obs_df, PA )
-    # now that those have the correct date fields, peel the dates out of the obs
+    # now that those have the correct date fields, peel the dates out of the obs.. we'll need those later
     date_df   = obs_df[ astro_time.DATE_FIELDS ].copy()
     # get a sensor frame (from the OBS again; we're using those ground sensors)
     sensor_df = sensor.prepUDLSensor( obs_df, PA )
+
+    # --------------------- HYPOTHESIS (from a TLE)
     # get hypothesis obs.. (from a TLE)
     eph_df    = sgp4.propTLE_df( date_df, L1, L2, PA )
     # turn each P,V into osculating elements (for ROTAS comparison)
@@ -51,9 +55,9 @@ if __name__ == '__main__':
     # find the U,V,W frame
     eph_df    = getUVW(eph_df)
 
+    # -------------------- RESIDUAL
     # now, generate hypothesis looks
     looks_df  = sensor.compute_looks( sensor_df, eph_df, PA )
-
     residuals_df = observations.residuals( obs_df, looks_df )
     print(residuals_df)
 

@@ -27,5 +27,3 @@ def osc_to_mean( XA_KEP, PA ):
     XA_KEP_MEAN = PA.helpers.astrostd_named_fields( PA.AstroFuncDll,  prefix='XA_KEP_' )
     PA.AstroFuncDll.KepOscToMean( XA_KEP.data, XA_KEP_MEAN.data )
     return XA_KEP_MEAN
-
-
