@@ -35,7 +35,8 @@ def optFunction( X, EH, return_scalar=True ):
     return {'observations'  : EH.obs_df.to_dict(orient='records'), 
             'looks'         : looks.to_dict(orient='records'), 
             'initial_line1' : EH.line1, 
-            'initial_line2' : EH.line2 }
+            'initial_line2' : EH.line2,
+            'residuals'     : resids.to_dict( orient='records') }
 
 # -----------------------------------------------------------------------------------------------------
 class eo_fitter( tle_fitter.tle_fitter ):
