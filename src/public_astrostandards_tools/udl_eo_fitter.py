@@ -88,7 +88,7 @@ class eo_fitter( tle_fitter.tle_fitter ):
         # TODO : termination conditions should be set AND we should weight according to obs calibration
         # for now, we're using fatol as the terminating condition (with a huge xatol).  
         #FATOL = np.sqrt(30 / 3600 * self.obs_df.shape[0] )
-        FATOL = 1
+        FATOL =  1
         ans   = scipy.optimize.minimize(optFunction, 
                                         self.get_init_fields(),
                                         args    = (self,True),
