@@ -19,7 +19,7 @@ def sv_to_osc( sv, PA ):
 def sv_to_osc_df( sv_df : pd.DataFrame, PA ) :
     tv = sv_df.apply( lambda X: sv_to_osc(X,PA), axis=1 )
     tv = [ X.toDict() for X in tv ]
-    tv = pd.DataFrame.from_dict( tv.values.tolist() )
+    tv = pd.DataFrame.from_dict( tv )
     return pd.concat( (sv_df.reset_index(drop=True), tv.reset_index(drop=True) ), axis =1 )
 
 
