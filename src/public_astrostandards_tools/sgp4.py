@@ -67,18 +67,19 @@ def propTLE_df( dates : pd.DataFrame,
     rv['teme_v'] = eph[:,4:7].tolist()
     return rv
 
-# =====================================================================================================
-if __name__ == '__main__':
-    import astro_time
+# -----------------------------------------------------------------------------------------------------
+def test():
+    from . import astro_time
     from datetime import datetime, timedelta, timezone 
 
     import public_astrostandards as PA
     from public_astrostandards import helpers
+    from . import test_helpers 
 
     PA.init_all()
-    
-    astro_time.load_time_constants(  './reduced_time_constants.dat' , PA )
 
+    astro_time.load_time_constants(  test_helpers.get_test_time_constants(), PA )
+    
     # test TLE
     L1 = '1 25544U 98067A   24365.67842578  .00026430  00000-0  46140-3 0  9990'
     L2 = '2 25544  51.6404  61.8250 0005853  25.4579 117.0387 15.50482079489028'
@@ -91,11 +92,20 @@ if __name__ == '__main__':
 
     # now propagate into that frame
     testout =  propTLE_df( time_df.copy(), L1, L2, PA ) 
+    print('-'*100)
+    print('Type 0 test :\n\t{}\n\t{}'.format(L1,L2))
     print(testout)
 
     nL1 = '1 25545U 98067A   24365.67842578  .00026430  00000-0  46140-3 4  9990'
     nL2 = '2 25545  51.6404  61.8250 0005853  25.4579 117.0387 15.50482079489028'
     testID = addTLE( nL1, L2, PA )
-    print(testID)
     assert initTLE( testID, PA )
-    propTLE_byID_df( testID, testout, PA )
+    print('-'*100)
+    print('Fake type 4 test :\n\t{}\n\t{}'.format(nL1,nL2))
+    print( propTLE_byID_df( testID, testout, PA ) )
+
+
+# =====================================================================================================
+if __name__ == '__main__':
+    test()
+    

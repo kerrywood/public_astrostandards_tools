@@ -3,9 +3,9 @@ import numpy as np
 import pandas as pd
 import scipy.optimize
 
-import astro_time
-import tle_fitter
-import sgp4
+from . import astro_time
+from . import tle_fitter
+from . import sgp4
 
 
 # -----------------------------------------------------------------------------------------------------
@@ -95,18 +95,15 @@ class ephem_fitter( tle_fitter.tle_fitter ):
             for k,v in zip(self.FIELDS,ans.x) : self.new_tle[k] = v
             self.ans = ans
             return self
-    
 
-# =====================================================================================================
-# main
-# =====================================================================================================
-if __name__ == '__main__':
-    import pandas as pd
+# -----------------------------------------------------------------------------------------------------
+def test():
     import public_astrostandards as PA
-    import astro_time
-    import sgp4
-
     PA.init_all()
+
+    print('-'*100)
+    print('Performing fit test')
+    print()
     # example TLE 
     # this is a type-4 faked by a modified from a space-track TLE
     L1 = '1 25544U 98067A   24365.67842578  .00000000  00000-0  00000-0 4  9990'
@@ -118,7 +115,6 @@ if __name__ == '__main__':
     # setup the job
     EH = ephem_fitter( PA ).set_from_tle(L1, L2, DATES ).set_satno(77777).set_type0()
 
-    print()
     print('-'*100)
     print('Fitting :\n\t{}\n\t{}'.format( L1, L2 ) )
     print('\t{} -- {}'.format( DATES[0], DATES[-1] ) )
@@ -135,3 +131,10 @@ if __name__ == '__main__':
 
     print('Your new TLE is :')
     print('\n'.join( output.getLines() ) )
+    
+
+# =====================================================================================================
+# main
+# =====================================================================================================
+if __name__ == '__main__':
+    test()

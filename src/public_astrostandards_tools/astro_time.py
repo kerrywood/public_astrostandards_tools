@@ -24,7 +24,7 @@
 
 import math
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pandas as pd
 
 # epochs to help us convert from and to Julian... (rather than a library)
@@ -54,7 +54,7 @@ def datetime_to_ds50( dt : list[ datetime ] , INTERFACE ):
 # -----------------------------------------------------------------------------------------------------
 def convert_times( datetimes : list[ datetime ] ,
                    INTERFACE ):
-        # convert the datetimes to astrostandard epochs
+    # convert the datetimes to astrostandard epochs
     def safeConvert( dt ):
         try :
             return INTERFACE.helpers.datetime_to_ds50( dt, INTERFACE.TimeFuncDll )
@@ -75,23 +75,24 @@ def convert_times( datetimes : list[ datetime ] ,
                'ds50_ut1' : Z } for X,Y,Z in zip(datetimes,ds50_utc,ds50_ut1) ])
 
 
-# ==================================================================================================
-if __name__ == '__main__':
-    import os
-    import sys
-    from datetime import timedelta, timezone
+# -----------------------------------------------------------------------------------------------------
+def test():
+    import test_helpers
 
     import public_astrostandards as harness
-
     # init all the Dll's
     harness.init_all()
 
     # use the TimeFunc to load the time parameters file (need to upate this periodically    )
-    #load_time_constants(  '/opt/astrostandards/full_time_constants.dat' , harness )
-    load_time_constants(  './reduced_time_constants.dat' , harness )
+    load_time_constants(  test_helpers.get_test_time_constants(), harness )
 
     # generate some test data
     dates = pd.date_range(  datetime.now( timezone.utc ), 
                             datetime.now( timezone.utc ) + timedelta(days=1), 
                             freq='5 min' )
     print(convert_times( dates, harness) )
+
+
+# ==================================================================================================
+if __name__ == '__main__':
+    test()  

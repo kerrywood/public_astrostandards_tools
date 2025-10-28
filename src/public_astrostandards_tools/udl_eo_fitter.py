@@ -3,11 +3,11 @@ import numpy as np
 import pandas as pd
 import scipy.optimize
 
-import astro_time
-import sgp4
-import sensor
-import observations
-import tle_fitter
+from . import astro_time
+from . import sgp4
+from . import sensor
+from . import observations
+from . import tle_fitter
 
 # -----------------------------------------------------------------------------------------------------
 def optFunction( X, EH, return_scalar=True ):

@@ -3,8 +3,9 @@ import time
 from datetime import datetime, timedelta
 import ctypes
 import numpy as np
-import astro_time
-import ephem_fitter
+import pandas as pd
+from . import astro_time
+from . import ephem_fitter
 
 # ----------------------------------------------------------------------------------------------------- 
 def doJob( L1, L2, DATES, PA):
@@ -68,11 +69,10 @@ def test():
 # =====================================================================================================
 if __name__ == '__main__':
     import sys
-    import pandas as pd
     import public_astrostandards as PA
-    import astro_time
     import argparse
     import json
+    from . import astro_time
 
     PA.init_all()
 
@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
     # parse the arguments
     args = parser.parse_args()
-
+    
     # =============================================================
     # CASE 1 : test
     # if test is specified, run that
@@ -126,14 +126,21 @@ if __name__ == '__main__':
     # =============================================================
     # CASE 3 : command line
     # now start adding params
-    assert  args.type  in set([0,2,4])
-    dates = pd.date_range( args.startdate, args.enddate, freq=args.spacing )
-    EH = ephem_fitter.ephem_fitter( PA ).set_data( args.line1, args.line2, dates )
-    if args.type == 0: EH.set_type0()
-    if args.type == 2: EH.set_type2()
-    if args.type == 4: EH.set_type4()
-    EH.set_satno( args.satno )
+    try: 
+        assert  args.type  in set([0,2,4])
+        dates = pd.date_range( args.startdate, args.enddate, freq=args.spacing )
+        EH = ephem_fitter.ephem_fitter( PA ).set_data( args.line1, args.line2, dates )
+        if args.type == 0: EH.set_type0()
+        if args.type == 2: EH.set_type2()
+        if args.type == 4: EH.set_type4()
+        EH.set_satno( args.satno )
 
-    print()
-    print()
-    print( json.dumps( EH.egp_tle().summarize_results(), indent=4) )
+        print()
+        print()
+        print( json.dumps( EH.egp_tle().summarize_results(), indent=4) )
+
+    except Exception as e:
+        print(e)
+        print()
+        parser.print_help()
+        sys.exit(1)
