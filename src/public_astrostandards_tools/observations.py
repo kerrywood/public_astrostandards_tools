@@ -3,10 +3,10 @@ import numpy as np
 import pandas as pd
 import scipy.optimize
 
-import astro_time
+from . import astro_time
 
 # -----------------------------------------------------------------------------------------------------
-def rotateTEMEObs( O , harness ):
+def UDL_rotate_TEME_ob( O , harness ):
     '''
     given a single ob (O) with ra / declination fields (J2K), convert to TEME
 
@@ -26,12 +26,12 @@ def rotateTEMEObs( O , harness ):
 
 # -----------------------------------------------------------------------------------------------------
 # rotate a dataframe of obs into TEME and then also get a TEME look vector (for solving)
-def rotateTEMEdf( df, harness ):
+def UDL_rotate_TEME_df( df, harness ):
     ''''
     given a set of UDL obs in a dataframe that have been annotated with astro_time.convert_time,
     rotate all from J2K into TEME
     '''
-    tv = df.apply( lambda X : rotateTEMEObs( X, harness ) , axis=1 )
+    tv = df.apply( lambda X : UDL_rotate_TEME_ob( X, harness ) , axis=1 )
     df['teme_ra']  = [ X[0] for X in tv ]
     df['teme_dec'] = [ X[1] for X in tv ]
     x = np.cos( np.radians(df['teme_dec']) ) * np.cos( np.radians( df['teme_ra'] ) )
@@ -58,16 +58,16 @@ def prepUDLObs( o_df, harness ):
     o_df = o_df.sort_values(by='obTime_dt')
     t_df = astro_time.convert_times( o_df['obTime_dt'], harness )
     o_df = pd.concat( (t_df.reset_index(drop=True),o_df.reset_index(drop=True) ), axis=1 )
-    o_df = rotateTEMEdf( o_df, harness )
+    o_df = UDL_rotate_TEME_df( o_df, harness )
     return o_df 
     
 # -----------------------------------------------------------------------------------------------------
-def residuals( udl_obs : pd.DataFrame, hypothesis_obs : pd.DataFrame ):
+def UDL_residuals( udl_obs : pd.DataFrame, hypothesis_obs : pd.DataFrame ):
     '''
     udl_obs :   UDL obs that have gone through prepUDLObs and have been rotated.  Should contain
                 fields like teme_ra, teme_dec
 
-    hypothesis_obs :    returned from `compute_looks`, should have fields like `XA_TOPO_DEC` and `XA_TOPO_RA`
+    hypothesis_obs :    returned from `sensor.compute_looks`, should have fields like `XA_TOPO_DEC` and `XA_TOPO_RA`
     '''
     rv = pd.DataFrame()
     if 'teme_ra' in udl_obs     : rv['ra']    = shortestAngle( udl_obs['teme_ra'] - hypothesis_obs['XA_TOPO_RA'] )
@@ -77,4 +77,7 @@ def residuals( udl_obs : pd.DataFrame, hypothesis_obs : pd.DataFrame ):
     if 'range' in udl_obs       : rv['range'] =  udl_obs['range'] - hypothesis_obs['XA_TOPO_RANGE'] 
     return rv
 
+
+
+# -----------------------------------------------------------------------------------------------------
 

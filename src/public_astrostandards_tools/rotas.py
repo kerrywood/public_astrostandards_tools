@@ -94,6 +94,6 @@ if __name__ == '__main__':
     # -------------------- RESIDUAL
     # now, generate hypothesis looks ( from sensor to eph frame )
     looks_df  = sensor.compute_looks( sensor_df, eph_df, PA )
-    residuals_df = observations.residuals( obs_df, looks_df )
+    residuals_df = observations.UDL_residuals( obs_df, looks_df )
 
     plane_intersection( eph_df, obs_df, sensor_df )

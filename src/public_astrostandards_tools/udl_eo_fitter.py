@@ -18,7 +18,7 @@ def optFunction( X, EH, return_scalar=True ):
     EH.PA.TleDll.TleRemoveAllSats()
     EH.PA.Sgp4PropDll.Sgp4RemoveAllSats()
     # --------------------- init our test TLE from the modified data
-    tleid = PA.TleDll.TleAddSatFrArray( EH.new_tle.data, XS_TLE )
+    tleid = EH.PA.TleDll.TleAddSatFrArray( EH.new_tle.data, XS_TLE )
     if tleid <= 0: return np.inf
     if EH.PA.Sgp4PropDll.Sgp4InitSat( tleid ) != 0: return np.inf
     # --------------------- generate our test ephemeris
@@ -26,7 +26,7 @@ def optFunction( X, EH, return_scalar=True ):
     # --------------------- generate looks from our sensor positinos
     looks         = sensor.compute_looks( EH.sensor_df, target_frame, EH.PA )
     # --------------------- get the residuals of these frames / obs
-    resids        = observations.residuals( EH.obs_df, looks )
+    resids        = observations.UDL_residuals( EH.obs_df, looks )
     N   = resids.shape[0]
     rms = np.sum( resids['ra'].values ** 2 + resids['dec'].values**2 ) / (2 * N )
     rv  = np.sqrt( rms )
@@ -116,6 +116,59 @@ class eo_fitter( tle_fitter.tle_fitter ):
             self.final_answer = optFunction( ans.x, self, False )
             return True
         return False
+
+
+# -----------------------------------------------------------------------------------------------------
+def test():
+    '''
+    test by propagating a satellite forward, generating synthetic (perfect) obs.. and fitting those
+    in essence: this is a TLE epoch mover that uses synthetic obs
+    '''
+    import public_astrostandards as PA
+    L1       = '1 88888           25289.62065319 +.00000000  00000 0  00000 0 0 0000'
+    L2       = '2 88888  56.8172  40.3738 0061389  69.9068 290.7527  2.0056030900000'
+    dts      = pd.date_range( '2025-12-01', '2025-12-14', freq='5min')
+    dates_df = astro_time.convert_times( dts, PA )
+    #dates_df['obTime'] = dts.values
+    # create a sensor frame
+    sens_df  = dates_df.copy()
+    # fake the sensor at the center of the earth
+    sens_df['senlat'], sens_df['senlon'], sens_df['senalt'] = 0., 0., 0.
+    sens_df            = sensor.prepUDLSensor( sens_df, PA )
+    # propagate the TLE to the dates
+    eph_df   = sgp4.propTLE_df( dates_df, L1, L2, PA )
+    # generate some fake looks of that target from our fake sensor
+    looks    = sensor.compute_looks( sens_df, eph_df, PA )
+    # now fake a UDL set of obs
+    udlobs   = pd.DataFrame()
+    udlobs['obTime']        = dts
+    udlobs['ra']            = looks['XA_TOPO_RA']
+    udlobs['declination']   = looks['XA_TOPO_DEC']
+    udlobs['senlat'], udlobs['senlon'], udlobs['senalt'] = 0., 0., 0.
+    # set up your fitter 
+    FIT      = eo_fitter( PA )
+    FIT = FIT.set_data( L1, L2, udlobs ).set_satno(99999).set_type0()
+    converged = FIT.fit_tle()
+    if converged:
+        rv = FIT.final_answer
+        nl1, nl2 = FIT.getLines()
+        print('\n\nOld TLE:\n{}\n{}'.format( L1, L2 )) 
+        print('\n\nNew TLE:\n{}\n{}'.format( nl1, nl2 ) )
+        rv.update({ 'new_line1' : nl1, 'new_line2' : nl2 })
+    else:
+        print('Did not converge')
+
+    FIT = FIT.set_data( L1, L2, udlobs ).set_satno(99999).set_type4()
+    converged = FIT.fit_tle()
+    if converged:
+        rv = FIT.final_answer
+        nl1, nl2 = FIT.getLines()
+        print('\n\nOld TLE:\n{}\n{}'.format( L1, L2 )) 
+        print('\n\nNew TLE:\n{}\n{}'.format( nl1, nl2 ) )
+        rv.update({ 'new_line1' : nl1, 'new_line2' : nl2 })
+    else:
+        print('Did not converge')
+
 
 
 # =====================================================================================================

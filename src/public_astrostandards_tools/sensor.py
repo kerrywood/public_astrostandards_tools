@@ -127,6 +127,12 @@ def compute_looks(
         lon
         theta
 
+    if you're a ground-based sensor, make sure to use llh_to_eci to annotate your frame with eci data
+    if you're a space-based sensor, make sure you use eci_to_llh to get your lon field
+
+    once you do that, you can run this function and it'll compute looks (of course, some fields might not 
+    make sense.. if you compute az/el for a space-based sensor.. that means.. something)
+
     NOTE: this will return a concat'd version of both DataFrames (make copies if you're worried)
         '''
     # we need a data holder for the output of ECIToTopoComps
@@ -167,30 +173,37 @@ def compute_looks(
 
 # -----------------------------------------------------------------------------------------------------
 def prepUDLSensor( obs_df : pd.DataFrame, INTERFACE ):
+    '''
+    UDL observations have some consistent fields; set those up for processing by our standard functions
+
+    NOTE: this is mostly for *ground-based* optics
+    EX:
+        senlat : sensor latitude (deg)
+        senlon : sensor longitude (deg)
+        senalt : sensor height (km)
+    '''
     sensor_df  = obs_df[['ds50_utc','senlat','senlon','senalt','theta']].copy()
     sensor_df  = sensor_df.rename( columns = {'senlat' : 'lat','senlon' : 'lon', 'senalt' : 'height' } )
     sensor_df  = llh_to_eci( sensor_df, INTERFACE )
     return sensor_df
 
-    
-
-# =====================================================================================================
-if __name__ == "__main__":
+# -----------------------------------------------------------------------------------------------------
+def test():
     from datetime import datetime,timedelta,timezone
     import public_astrostandards as harness
 
-    import astro_time 
-    import sgp4 
+    from . import astro_time 
+    from . import sgp4 
+    from . import test_helpers
 
     # init all the Dll's
     harness.init_all()
 
     # use the TimeFunc to load the time parameters file (need to upate this periodically)
-    astro_time.load_time_constants( './reduced_time_constants.dat', harness )
+    astro_time.load_time_constants(  test_helpers.get_test_time_constants(), harness )
 
     # generate some test data
     dates = pd.date_range( '2025-10-15', '2025-10-25',  freq='1min' )
-    #dates = pd.date_range( datetime.now( timezone.utc ), datetime.now( timezone.utc ) + timedelta(days=14), freq='1min' )
 
     # use the astro_time to initialize the dataframe with times
     # note that the sensor and target dataframes must be time aligned
@@ -236,8 +249,9 @@ if __name__ == "__main__":
     # note that we're only checking at those times that the sun is down
     # this limits the propagation calls (more efficient)
     target_f = sgp4.propTLE_df( dates_sundown_f, L1, L2, harness ) 
-    # check if the target is sunlit...
+    # check if the target is sunlit... (annotate each row)
     target_f['is_sunlit'] = is_sunlit( target_f, harness )
+    # now compute the actual looks....
     looks_f = compute_looks( sensor_sundown_f, target_f, harness )
 
     # note that here, _target is appended to a field we pushed into compute_looks
@@ -245,3 +259,9 @@ if __name__ == "__main__":
     good = looks_f[ (looks_f['XA_TOPO_EL'] > 5) * (looks_f['is_sunlit_target'] == 1 ) ] 
     pd.set_option('display.max_rows', None)
     print( good[['datetime_sensor','XA_TOPO_EL','XA_TOPO_AZ','XA_TOPO_RANGE','is_sunlit_target']].head(100) )
+
+    
+
+# =====================================================================================================
+if __name__ == "__main__":
+    test()
