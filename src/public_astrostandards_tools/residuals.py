@@ -2,6 +2,17 @@ from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 import scipy.optimize
+from . import astro_time
+from . import observations
+from . import sgp4
+from . import sensor
+from . import utils
+from . import residuals
+
+# -----------------------------------------------------------------------------------------------------
+def shortestAngle( angles : np.array ):
+    # compute the RMS based on the residuals (https://stackoverflow.com/questions/1878907/how-can-i-find-the-smallest-difference-between-two-angles-around-a-point#7869457)
+    return (angles + 180) % 360 - 180
 
 # -----------------------------------------------------------------------------------------------------
 def getUVW( sv_df : pd.DataFrame ):
@@ -50,34 +61,45 @@ def plane_intersection(
     orbit_normal = orbit_normal / np.linalg.norm( orbit_normal, axis=1)[:,np.newaxis]
     t     = - np.sum( orbit_normal * temep) 
     t    /= np.sum( orbit_normal * lookv )
-    print(t)
     return t
+
+# -----------------------------------------------------------------------------------------------------
+def UDL_residuals( udl_obs : pd.DataFrame, hypothesis_obs : pd.DataFrame ):
+    '''
+    udl_obs :   UDL obs that have gone through prepUDLObs and have been rotated.  Should contain
+                fields like teme_ra, teme_dec
+
+    hypothesis_obs :    returned from `sensor.compute_looks`, should have fields like `XA_TOPO_DEC` and `XA_TOPO_RA`
+    '''
+    rv = pd.DataFrame()
+    if 'teme_ra' in udl_obs     : rv['ra']    = shortestAngle( udl_obs['teme_ra'] - hypothesis_obs['XA_TOPO_RA'] )
+    if 'teme_dec' in udl_obs    : rv['dec']   = shortestAngle( udl_obs['teme_dec'] - hypothesis_obs['XA_TOPO_DEC'] )
+    if 'azimuth' in udl_obs     : rv['az']    = shortestAngle( udl_obs['azimuth'] - hypothesis_obs['XA_TOPO_AZ'] )
+    if 'elevation' in udl_obs   : rv['el']    = shortestAngle( udl_obs['elevation'] - hypothesis_obs['XA_TOPO_EL'] )
+    if 'range' in udl_obs       : rv['range'] =  udl_obs['range'] - hypothesis_obs['XA_TOPO_RANGE'] 
+    return rv
 
 
 
 # =====================================================================================================
 if __name__ == '__main__':
-    import astro_time
-    import observations
-    import sgp4
-    import sensor
-    import utils
-    import time
-
+    import os
     import public_astrostandards as PA
+    from . import test_helpers
     PA.init_all()
 
     # TLE
-    with open('../../tests/27566.tle') as F: lines = F.readlines()
+    tleF     = os.path.join( test_helpers.get_test_dir(), '19548.tle' )
+    with open( tleF ) as F: lines = F.readlines()
     L1 = lines[0].strip()
     L2 = lines[1].strip()
 
     # load obs 
-    obs_df    = pd.read_json('../../tests/27566.json.gz').sort_values(by='obTime')
+    obsF      = os.path.join( test_helpers.get_test_dir(), '19548.json.gz' )
+    obs_df    = pd.read_json( obsF ).sort_values(by='obTime')
     # reformat UDL obs (these are our actual TEST obs ; from a sensor)
     obs_df    = observations.prepUDLObs( obs_df, PA )
 
-    st = time.time()
     # now that those have the correct date fields, peel the dates out of the obs.. we'll need those later
     date_df   = obs_df[ astro_time.DATE_FIELDS ].copy()
     # get a sensor frame (from the OBS again; we're using those ground sensors)
@@ -94,6 +116,6 @@ if __name__ == '__main__':
     # -------------------- RESIDUAL
     # now, generate hypothesis looks ( from sensor to eph frame )
     looks_df  = sensor.compute_looks( sensor_df, eph_df, PA )
-    residuals_df = observations.UDL_residuals( obs_df, looks_df )
+    residuals_df = residuals.UDL_residuals( obs_df, looks_df )
 
     plane_intersection( eph_df, obs_df, sensor_df )

@@ -26,6 +26,7 @@ def fileJob( fn , PA ):
         if output : job['egp'] = output.summarize_results()
         else : job['egp'] = None
     return jobs
+
 # ----------------------------------------------------------------------------------------------------- 
 def test():
     import public_astrostandards as PA

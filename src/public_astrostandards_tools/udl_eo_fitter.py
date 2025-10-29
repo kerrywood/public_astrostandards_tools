@@ -8,6 +8,7 @@ from . import sgp4
 from . import sensor
 from . import observations
 from . import tle_fitter
+from . import residuals
 
 # -----------------------------------------------------------------------------------------------------
 def optFunction( X, EH, return_scalar=True ):
@@ -26,7 +27,7 @@ def optFunction( X, EH, return_scalar=True ):
     # --------------------- generate looks from our sensor positinos
     looks         = sensor.compute_looks( EH.sensor_df, target_frame, EH.PA )
     # --------------------- get the residuals of these frames / obs
-    resids        = observations.UDL_residuals( EH.obs_df, looks )
+    resids        = residuals.UDL_residuals( EH.obs_df, looks )
     N   = resids.shape[0]
     rms = np.sum( resids['ra'].values ** 2 + resids['dec'].values**2 ) / (2 * N )
     rv  = np.sqrt( rms )
@@ -129,6 +130,8 @@ def test():
     L2       = '2 88888  56.8172  40.3738 0061389  69.9068 290.7527  2.0056030900000'
     dts      = pd.date_range( '2025-12-01', '2025-12-14', freq='5min')
     dates_df = astro_time.convert_times( dts, PA )
+    print('Generating synthetic obs for:\n{}\n{}'.format( L1, L2 ) )
+    print('Over {} -- {} with 5 minute spacing\n'.format( dts[0], dts[-1] ))
     #dates_df['obTime'] = dts.values
     # create a sensor frame
     sens_df  = dates_df.copy()
@@ -147,24 +150,26 @@ def test():
     udlobs['senlat'], udlobs['senlon'], udlobs['senalt'] = 0., 0., 0.
     # set up your fitter 
     FIT      = eo_fitter( PA )
-    FIT = FIT.set_data( L1, L2, udlobs ).set_satno(99999).set_type0()
+    FIT = FIT.set_data( L1, L2, udlobs ).set_satno(88880).set_type0()
     converged = FIT.fit_tle()
     if converged:
         rv = FIT.final_answer
         nl1, nl2 = FIT.getLines()
-        print('\n\nOld TLE:\n{}\n{}'.format( L1, L2 )) 
-        print('\n\nNew TLE:\n{}\n{}'.format( nl1, nl2 ) )
+        print('Type 0 fit-test')
+        print('\nOld TLE:\n{}\n{}'.format( L1, L2 )) 
+        print('New TLE:\n{}\n{}'.format( nl1, nl2 ) )
         rv.update({ 'new_line1' : nl1, 'new_line2' : nl2 })
     else:
         print('Did not converge')
 
-    FIT = FIT.set_data( L1, L2, udlobs ).set_satno(99999).set_type4()
+    FIT = FIT.set_data( L1, L2, udlobs ).set_satno(88881).set_type4()
     converged = FIT.fit_tle()
     if converged:
         rv = FIT.final_answer
         nl1, nl2 = FIT.getLines()
-        print('\n\nOld TLE:\n{}\n{}'.format( L1, L2 )) 
-        print('\n\nNew TLE:\n{}\n{}'.format( nl1, nl2 ) )
+        print('Type 4 fit-test')
+        print('\nOld TLE:\n{}\n{}'.format( L1, L2 )) 
+        print('New TLE:\n{}\n{}'.format( nl1, nl2 ) )
         rv.update({ 'new_line1' : nl1, 'new_line2' : nl2 })
     else:
         print('Did not converge')
@@ -178,9 +183,9 @@ if __name__ == '__main__':
     import sys
     import pandas as pd
     import public_astrostandards as PA
-    import astro_time
     import argparse
     import json
+    from . import astro_time
     from . import test_helpers
 
     parser = argparse.ArgumentParser(

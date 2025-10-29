@@ -43,11 +43,6 @@ def UDL_rotate_TEME_df( df, harness ):
 
 
 # -----------------------------------------------------------------------------------------------------
-def shortestAngle( angles : np.array ):
-    # compute the RMS based on the residuals (https://stackoverflow.com/questions/1878907/how-can-i-find-the-smallest-difference-between-two-angles-around-a-point#7869457)
-    return (angles + 180) % 360 - 180
-
-# -----------------------------------------------------------------------------------------------------
 # grab some raw UDL obs; convert the time; sort
 def prepUDLObs( o_df, harness ):
     '''
@@ -62,22 +57,3 @@ def prepUDLObs( o_df, harness ):
     return o_df 
     
 # -----------------------------------------------------------------------------------------------------
-def UDL_residuals( udl_obs : pd.DataFrame, hypothesis_obs : pd.DataFrame ):
-    '''
-    udl_obs :   UDL obs that have gone through prepUDLObs and have been rotated.  Should contain
-                fields like teme_ra, teme_dec
-
-    hypothesis_obs :    returned from `sensor.compute_looks`, should have fields like `XA_TOPO_DEC` and `XA_TOPO_RA`
-    '''
-    rv = pd.DataFrame()
-    if 'teme_ra' in udl_obs     : rv['ra']    = shortestAngle( udl_obs['teme_ra'] - hypothesis_obs['XA_TOPO_RA'] )
-    if 'teme_dec' in udl_obs    : rv['dec']   = shortestAngle( udl_obs['teme_dec'] - hypothesis_obs['XA_TOPO_DEC'] )
-    if 'azimuth' in udl_obs     : rv['az']    = shortestAngle( udl_obs['azimuth'] - hypothesis_obs['XA_TOPO_AZ'] )
-    if 'elevation' in udl_obs   : rv['el']    = shortestAngle( udl_obs['elevation'] - hypothesis_obs['XA_TOPO_EL'] )
-    if 'range' in udl_obs       : rv['range'] =  udl_obs['range'] - hypothesis_obs['XA_TOPO_RANGE'] 
-    return rv
-
-
-
-# -----------------------------------------------------------------------------------------------------
-

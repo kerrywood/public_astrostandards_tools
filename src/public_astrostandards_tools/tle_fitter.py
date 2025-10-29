@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 import ctypes
 import numpy as np
 import scipy.optimize
-import sgp4
-import utils
+from . import sgp4
+from . import utils
 
 # what fields will we optimize over?  This doubles as a field accessor list for the optimizer..
 FIT_TYPE4 = [
