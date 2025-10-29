@@ -2,7 +2,6 @@ import sys
 import ctypes
 import numpy as np
 import pandas as pd
-# from astrostandards.utils import helpers
 
 # -----------------------------------------------------------------------------------------------------
 def llh_to_eci( df : list[ float ],

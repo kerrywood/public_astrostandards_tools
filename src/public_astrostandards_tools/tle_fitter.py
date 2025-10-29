@@ -4,7 +4,7 @@ import ctypes
 import numpy as np
 import scipy.optimize
 from . import sgp4
-from . import utils
+from . import orbit_utils
 
 # what fields will we optimize over?  This doubles as a field accessor list for the optimizer..
 FIT_TYPE4 = [
@@ -94,6 +94,8 @@ class tle_fitter:
         self.mm_kozai   = None      # we might switch between these; store both "out of band" (not in the data array)
         self.mm_brouwer = None
 
+    # when we set TLE data from some external source (like state vector), compute the Kozai and 
+    # Brouwer elements for those data; we can then set the fields when we switch types
     def _brouwer_to_kozai( self ):
         self.mm_kozai = self.PA.AstroFuncDll.BrouwerToKozai( 
                                 self.init_tle['XA_TLE_ECCEN'], 
@@ -163,8 +165,8 @@ class tle_fitter:
         # set the date
         self.new_tle['XA_TLE_EPOCH'] = sv['ds50_utc']
         # set the elements according to the state vector
-        osc  = utils.sv_to_osc( sv, self.PA )
-        mean = utils.osc_to_mean( osc, self.PA )
+        osc  = orbit_utils.sv_to_osc( sv, self.PA )
+        mean = orbit_utils.osc_to_mean( osc, self.PA )
         insert_kep_to_TLE( self.new_tle, mean, self.PA )
         self._brouwer_to_kozai()
 

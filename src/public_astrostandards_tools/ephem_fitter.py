@@ -50,6 +50,13 @@ class ephem_fitter( tle_fitter.tle_fitter ):
         self.new_tle['XA_TLE_EPOCH'] = epoch_sv['ds50_utc']
         return self
 
+    def set_ephemeris( self, eph_df : pd.DataFrame ):
+        self.truth_df   = eph_df
+        self.truth_dt   = eph_df['datetime'].values
+        self.truth_date = eph_df['ds50_utc'].values
+        self.truth_eph  = np.vstack( (self.truth_df['teme_p']) )
+        self._init_fields()
+
     def set_from_tle( self, L1 : str, L2 : str, dates : list[ datetime ] ):
         ''' 
         take a TLE (from lines) and a set of dates we'll optimize over,
@@ -61,11 +68,8 @@ class ephem_fitter( tle_fitter.tle_fitter ):
         # clear all sats
         self.PA.TleDll.TleRemoveAllSats()
         # propagate this TLE to the dates.. this is our truth s
-        self.truth_df   = sgp4.propTLE_df( dates_f, L1, L2, self.PA )
-        self.truth_dt   = dates_f['datetime'].values
-        self.truth_date = dates_f['ds50_utc'].values
-        self.truth_eph  = np.vstack( (self.truth_df['teme_p']) )
-        self._init_fields()
+        eph_df = sgp4.propTLE_df( dates_f, L1, L2, self.PA )
+        self.set_ephemeris( eph_df )
         self.line1      = L1
         self.line2      = L2
         return self
@@ -76,8 +80,8 @@ class ephem_fitter( tle_fitter.tle_fitter ):
                     'fields'     : self.FIELDS,
                     'dates'      : ( self.truth_dt[0], self.truth_dt[-1] ),
                     'points'     : len( self.truth_date),
-                    'rms'        : self.ans.fun,
-                    'rms_per_pt' : self.ans.fun / len( self.truth_date ) }
+                    'rms'        : float(self.ans.fun),
+                    'rms_per_pt' : float(self.ans.fun) / len( self.truth_date ) }
 
     def fit_tle( self ):
         # -----------------------------  nelder mead -----------------------------

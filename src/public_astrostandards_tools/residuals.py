@@ -6,7 +6,7 @@ from . import astro_time
 from . import observations
 from . import sgp4
 from . import sensor
-from . import utils
+from . import orbit_utils
 from . import residuals
 
 # -----------------------------------------------------------------------------------------------------
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     # get hypothesis obs.. (from a TLE)
     eph_df    = sgp4.propTLE_df( date_df, L1, L2, PA )
     # turn each P,V into osculating elements (for ROTAS comparison)
-    eph_df    = utils.sv_to_osc_df( eph_df, PA )
+    eph_df    = orbit_utils.sv_to_osc_df( eph_df, PA )
     # find the U,V,W frame
     eph_df    = getUVW(eph_df)
 

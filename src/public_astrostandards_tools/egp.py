@@ -40,7 +40,7 @@ def test():
     L1 = '1 25544U 98067A   24365.67842578  .00000000  00000-0  00000-0 4  9990'
     L2 = '2 25544  51.6404  61.8250 0005853  25.4579 117.0387 15.50482079489028'
     # this is your fit range
-    DATES = pd.date_range( '2025-6-1', '2025-6-2', freq='5min' )
+    DATES = pd.date_range( '2025-6-1', '2025-6-2', freq='5min' ).to_pydatetime()
     # -----------------------------------------------------------------------------------------------------
     print()
     print('Your original TLE was')
@@ -130,7 +130,7 @@ if __name__ == '__main__':
     try: 
         assert  args.type  in set([0,2,4])
         dates = pd.date_range( args.startdate, args.enddate, freq=args.spacing )
-        EH = ephem_fitter.ephem_fitter( PA ).set_data( args.line1, args.line2, dates )
+        EH = ephem_fitter.ephem_fitter( PA ).set_from_tle( args.line1, args.line2, dates )
         if args.type == 0: EH.set_type0()
         if args.type == 2: EH.set_type2()
         if args.type == 4: EH.set_type4()
@@ -138,7 +138,7 @@ if __name__ == '__main__':
 
         print()
         print()
-        print( json.dumps( EH.egp_tle().summarize_results(), indent=4) )
+        print( json.dumps( EH.fit_tle().summarize_results(), indent=4, default=str ) )
 
     except Exception as e:
         print(e)
