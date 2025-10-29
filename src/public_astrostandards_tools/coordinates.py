@@ -82,7 +82,7 @@ def toCCSDS( df : pd.DataFrame ):
     odf['j2k_dx']    = df['j2k_v'].apply( lambda X: X[0] )
     odf['j2k_dy']    = df['j2k_v'].apply( lambda X: X[1] )
     odf['j2k_dz']    = df['j2k_v'].apply( lambda X: X[2] )
-    return odf.to_csv( index=None )
+    return odf.to_csv( index=None , sep='\t' )
 
 # -----------------------------------------------------------------------------------------------------
 def fromCCSDS( lines ): 
@@ -91,7 +91,7 @@ def fromCCSDS( lines ):
     '''
     def parseLine(L):
         try:
-            flds = L.strip().split(',')
+            flds = L.strip().split('\t')
             assert len(flds) == 7 
             dt   = datetime.strptime(flds[0], '%Y-%m-%dT%H:%M:%S.%f' )
             return (dt, [ float(X) for X in flds[1:4] ], [float(X) for X in flds[4:] ] )
@@ -124,5 +124,6 @@ if __name__ == '__main__':
     from_j2k   = J2K_to_TEME( to_j2k, PA )
 
     X  = toCCSDS( from_j2k ) 
+    print(X)
     Y  = fromCCSDS( X.split('\n') )
     print(Y)
