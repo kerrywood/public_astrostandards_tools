@@ -1,7 +1,32 @@
 import ctypes 
+from datetime import datetime, timedelta, timezone
+import numpy as np
 import pandas as pd
 
-#,  -----------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------
+_DSEPOCH = datetime(year=1950,month=1,day=1)
+def datetime_from_ds50( ds50 : float ):
+    # minus 1 because astrostandards epoch is 1-indexed.. not 0
+    return _DSEPOCH + timedelta( days=ds50-1 )
+
+# -----------------------------------------------------------------------------------------------------
+def getRIC( sv ):
+    P = np.array( sv['teme_p'] )
+    V = np.array(sv['teme_v'] )
+    R = np.array(P) / np.linalg.norm(P)
+    I = np.array(V) / np.linalg.norm(V)
+    C = np.cross( I, R )
+    return R, I, C
+
+# -----------------------------------------------------------------------------------------------------
+def XA_TLE_to_str( XA_TLE, harness, satno=None ):
+    TSTR = harness.Cstr('',512)
+    if satno : XA_TLE['XA_TLE_SATNUM'] = satno
+    nL1, nL2 = harness.Cstr('',512),harness.Cstr('',512)
+    harness.TleDll.TleGPArrayToLines( XA_TLE.data, TSTR, nL1, nL2 )
+    return nL1.value.decode('utf-8').strip(), nL2.value.decode('utf-8').strip()
+
+# -----------------------------------------------------------------------------------------------------
 def sv_to_osc( sv, PA ):
     '''
     sv : <teme_pos><teme_vel>
@@ -15,7 +40,7 @@ def sv_to_osc( sv, PA ):
         XA_KEP.data )
     return XA_KEP
 
-#,  -----------------------------------------------------------------------------------------------------
+#  -----------------------------------------------------------------------------------------------------
 def sv_to_osc_df( sv_df : pd.DataFrame, PA ) :
     ''' 
     given a dataframe with 'teme_p' and 'teme_v' on each row, annotate each row with XA_KEP data

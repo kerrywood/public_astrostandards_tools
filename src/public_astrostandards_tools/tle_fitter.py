@@ -109,6 +109,8 @@ class tle_fitter:
                                 self.init_tle['XA_TLE_MNMOTN'] )
     
     def set_from_lines( self, L1 : str, L2 : str ):
+        self.original_line1 = L1
+        self.original_line2 = L2
         self.init_tle, self.init_str = TLE_str_to_XA_TLE( L1, L2, self.PA )
         self.tle_type  = self.init_tle['XA_TLE_EPHTYPE']
         if self.tle_type:
@@ -171,7 +173,19 @@ class tle_fitter:
         self._brouwer_to_kozai()
 
     def getLines( self ):
+        # always the NEW TLE
         return XA_TLE_to_str( self.new_tle, self.PA )
+
+    def getOriginalLines( self ):
+        return self.original_line1, self.original_line2
+
+    def getOriginalEpoch( self ):
+        # always the NEW TLE
+        return orbit_utils.datetime_from_ds50( self.init_tle['XA_TLE_EPOCH']  )
+
+    def getEpoch( self ):
+        # always the NEW TLE
+        return orbit_utils.datetime_from_ds50( self.new_tle['XA_TLE_EPOCH']  )
     
     def initial_simplex( self, delta=0.15):
         '''
