@@ -41,27 +41,34 @@ def getUVW( sv_df : pd.DataFrame ):
 # we'll try a plane intersection approach to find the direction
 # -----------------------------------------------------------------------------------------------------
 def plane_intersection( 
-                       eph_df : pd.DataFrame, 
-                       obs_df : pd.DataFrame,
+                       eph_df : pd.DataFrame,   # hypothesis / TLE data
+                       obs_df : pd.DataFrame,   # observations (calculated from the sensor to the hypothesis)
                        sen_df : pd.DataFrame ):
 
     '''
-    eph_df : computed / test ephemeris
-    obs_df : observations 
+    All must be time / row aligned:
+        eph_df : computed / test ephemeris
+        obs_df : observations 
+        sen_df : sensor location
+
+    Assumes some geometric diversity; if co-planar, this will fail
     '''
     # test ephemeris / computed location
     temep = np.vstack( eph_df['teme_p'] )
     temev = np.vstack( eph_df['teme_v'] )
-    # look vector from the obs (computed in TEME)
-    lookv = np.vstack( obs_df['teme_lv'] )
-    # pull the sensor location in TEME
+    # sensor eci vector
     senp  = np.vstack( sen_df['teme_p'] )
-    # compute normals and 
-    orbit_normal = np.cross( temep, temev, axis=1 )
-    orbit_normal = orbit_normal / np.linalg.norm( orbit_normal, axis=1)[:,np.newaxis]
-    t     = - np.sum( orbit_normal * temep) 
-    t    /= np.sum( orbit_normal * lookv )
-    return t
+    # observation look vectors
+    obslv = np.vstack( obs_df['teme_lv'] )
+
+    # orbit momentum vector
+    omom  = np.cross( temep, temev, axis=1 )
+    omom  = omom / np.linalg.norm(omom,axis=1)[:,np.newaxis]
+   
+    # numerator / denominator
+    num   = np.sum( -senp * omom, axis=1 )
+    den   = np.sum( obslv * omom, axis=1 )
+    return num / den
 
 # -----------------------------------------------------------------------------------------------------
 def UDL_residuals( udl_obs : pd.DataFrame, hypothesis_obs : pd.DataFrame ):
@@ -79,8 +86,6 @@ def UDL_residuals( udl_obs : pd.DataFrame, hypothesis_obs : pd.DataFrame ):
     if 'range' in udl_obs       : rv['range'] =  udl_obs['range'] - hypothesis_obs['XA_TOPO_RANGE'] 
     return rv
 
-
-
 # =====================================================================================================
 if __name__ == '__main__':
     import os
@@ -88,14 +93,17 @@ if __name__ == '__main__':
     from . import test_helpers
     PA.init_all()
 
-    # TLE
+    # TLE data 
     tleF     = os.path.join( test_helpers.get_test_dir(), '19548.tle' )
+    #tleF     = os.path.join( test_helpers.get_test_dir(), '40294.tle' )
     with open( tleF ) as F: lines = F.readlines()
     L1 = lines[0].strip()
     L2 = lines[1].strip()
 
     # load obs 
     obsF      = os.path.join( test_helpers.get_test_dir(), '19548.json.gz' )
+    print(obsF)
+    #obsF      = os.path.join( test_helpers.get_test_dir(), '40294.json.gz' )
     obs_df    = pd.read_json( obsF ).sort_values(by='obTime')
     # reformat UDL obs (these are our actual TEST obs ; from a sensor)
     obs_df    = observations.prepUDLObs( obs_df, PA )
@@ -118,4 +126,8 @@ if __name__ == '__main__':
     looks_df  = sensor.compute_looks( sensor_df, eph_df, PA )
     residuals_df = residuals.UDL_residuals( obs_df, looks_df )
 
-    plane_intersection( eph_df, obs_df, sensor_df )
+    ranges = plane_intersection( eph_df, obs_df, sensor_df )
+    for A,B in zip(ranges,obs_df['range']):
+        print('Plane intersect range : {:08.2f}   Obs range: {:08.2f}'.format(A,B))
+        print('Plane intersect range : {:08.2f}   Obs range: {:08.2f}'.format(A,B))
+
