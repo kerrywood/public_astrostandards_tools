@@ -68,6 +68,8 @@ def plane_intersection(
     # numerator / denominator
     num   = np.sum( -senp * omom, axis=1 )
     den   = np.sum( obslv * omom, axis=1 )
+
+    # TODO: if the denominator is zero.. we are coplanar('ish); need another method
     return num / den
 
 # -----------------------------------------------------------------------------------------------------
@@ -127,7 +129,6 @@ if __name__ == '__main__':
     residuals_df = residuals.UDL_residuals( obs_df, looks_df )
 
     ranges = plane_intersection( eph_df, obs_df, sensor_df )
+    print('{:20} {:20} '.format( 'Calc/plane range','Obs range'))
     for A,B in zip(ranges,obs_df['range']):
-        print('Plane intersect range : {:08.2f}   Obs range: {:08.2f}'.format(A,B))
-        print('Plane intersect range : {:08.2f}   Obs range: {:08.2f}'.format(A,B))
-
+        print('{:<20.3f} {:<20.3f} '.format( A,B ) )
