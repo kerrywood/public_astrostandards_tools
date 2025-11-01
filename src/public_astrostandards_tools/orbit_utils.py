@@ -41,14 +41,23 @@ def sv_to_osc( sv, PA ):
     return XA_KEP
 
 #  -----------------------------------------------------------------------------------------------------
+def osc_to_true_anomaly( xkep , PA ):
+    return PA.AstroFuncDll.CompTrueAnomaly( xkep.data )
+
+#  -----------------------------------------------------------------------------------------------------
 def sv_to_osc_df( sv_df : pd.DataFrame, PA ) :
     ''' 
     given a dataframe with 'teme_p' and 'teme_v' on each row, annotate each row with XA_KEP data
     '''
     tv = sv_df.apply( lambda X: sv_to_osc(X,PA), axis=1 )
+    # if we need true anomaly as well, that's a separate calculation
+    ta = [ osc_to_true_anomaly(X, PA) for X in tv ]  # do this before re-using the variable
     tv = [ X.toDict() for X in tv ]
     tv = pd.DataFrame.from_dict( tv )
-    return pd.concat( (sv_df.reset_index(drop=True), tv.reset_index(drop=True) ), axis =1 )
+    rv = pd.concat( (sv_df.reset_index(drop=True), tv.reset_index(drop=True) ), axis=1 )
+    # add in the true anomaly data 
+    rv['XA_KEP_TA'] = ta
+    return rv
 
 # -----------------------------------------------------------------------------------------------------
 def osc_to_mean( XA_KEP, PA ):
