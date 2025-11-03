@@ -121,6 +121,7 @@ def UDL_residuals( udl_obs : pd.DataFrame, hypothesis_obs : pd.DataFrame ):
 # =====================================================================================================
 if __name__ == '__main__':
     import os
+    import time
     import public_astrostandards as PA
     from . import test_helpers
     PA.init_all()
@@ -136,10 +137,13 @@ if __name__ == '__main__':
     L2 = lines[1].strip()
 
     # load obs 
-    obsF      = os.path.join( test_helpers.get_test_dir(), '19548.json.gz' )
+    #obsF      = os.path.join( test_helpers.get_test_dir(), '19548.json.gz' )
+    obsF      = '~/Downloads/cache.json.gz'
     print(obsF)
     #obsF      = os.path.join( test_helpers.get_test_dir(), '40294.json.gz' )
     obs_df    = pd.read_json( obsF ).sort_values(by='obTime')
+    print('See {} obs'.format( obs_df.shape[0] ))
+    st = time.time()
     # reformat UDL obs (these are our actual TEST obs ; from a sensor)
     obs_df    = observations.prepUDLObs( obs_df, PA )
 
@@ -190,6 +194,7 @@ if __name__ == '__main__':
     n        = np.sqrt( 398600.5 / eph_df['XA_KEP_A'] ** 3)
     del_t    = (Mc - Mo) / n
     residuals_df['del_t'] = del_t
+    print('Total run time : {:10.3f}'.format( time.time() - st ))
 
 #    print('{:20} {:20} '.format( 'Calc/plane range','Obs range'))
 #    for A,B in zip(ranges,obs_df['range']):

@@ -2,6 +2,7 @@ import ctypes
 from datetime import datetime, timedelta, timezone
 import numpy as np
 import pandas as pd
+import copy
 
 # -----------------------------------------------------------------------------------------------------
 _DSEPOCH = datetime(year=1950,month=1,day=1)
@@ -32,6 +33,7 @@ def sv_to_osc( sv, PA ):
     sv : <teme_pos><teme_vel>
     return XA_KEP
     '''
+    # this is an expensive operation
     XA_KEP    = PA.helpers.astrostd_named_fields( PA.AstroFuncDll,  prefix='XA_KEP_' )
     # we'll use the conversion in the astrostandards
     PA.AstroFuncDll.PosVelToKep( 
@@ -49,14 +51,22 @@ def sv_to_osc_df( sv_df : pd.DataFrame, PA ) :
     ''' 
     given a dataframe with 'teme_p' and 'teme_v' on each row, annotate each row with XA_KEP data
     '''
-    tv = sv_df.apply( lambda X: sv_to_osc(X,PA), axis=1 )
-    # if we need true anomaly as well, that's a separate calculation
-    ta = [ osc_to_true_anomaly(X, PA) for X in tv ]  # do this before re-using the variable
-    tv = [ X.toDict() for X in tv ]
-    tv = pd.DataFrame.from_dict( tv )
+    # getting a helpers object is expensive, so rather than re-use the sv_to_osc routine, we'll do 
+    # something more efficient here and re-use the holder and a closure
+    XA_KEP    = PA.helpers.astrostd_named_fields( PA.AstroFuncDll,  prefix='XA_KEP_' )
+    def _kep_closure( D ):
+        PA.AstroFuncDll.PosVelToKep( 
+            (ctypes.c_double*3)(*D['teme_p']), 
+            (ctypes.c_double*3)(*D['teme_v']), 
+            XA_KEP.data )
+        true_anom = PA.AstroFuncDll.CompTrueAnomaly( XA_KEP.data )
+        rv = XA_KEP.toDict()
+        rv.update( {'XA_KEP_TA' : true_anom } )
+        return rv
+    tv = sv_df.apply( lambda X: _kep_closure(X), axis=1 )
+    tv = pd.DataFrame.from_dict( tv.values.tolist() )
     rv = pd.concat( (sv_df.reset_index(drop=True), tv.reset_index(drop=True) ), axis=1 )
     # add in the true anomaly data 
-    rv['XA_KEP_TA'] = ta
     return rv
 
 # -----------------------------------------------------------------------------------------------------
