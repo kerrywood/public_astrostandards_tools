@@ -22,6 +22,8 @@ def getUVW( sv_df : pd.DataFrame ):
     (see Figure 3 of the ROTASDll documentation (pg 19 in version 9.5)
 
     Note: this will annotate the input frame
+
+    Note: there's a function in AstroFuncDll that does this as well
     '''
     # we'll do this in numpy arrays / vectors for speed (push lists to DataFrame)
     tP = np.vstack( sv_df['teme_p'].values )
@@ -118,35 +120,15 @@ def UDL_residuals( udl_obs : pd.DataFrame, hypothesis_obs : pd.DataFrame ):
     if 'range' in udl_obs       : rv['range'] =  udl_obs['range'] - hypothesis_obs['XA_TOPO_RANGE'] 
     return rv
 
-# =====================================================================================================
-if __name__ == '__main__':
-    import os
-    import time
-    import public_astrostandards as PA
-    from . import test_helpers
-    PA.init_all()
-
-    # load the stored time constants file 
-    astro_time.load_time_constants( test_helpers.get_test_time_constants(), PA )
-
-    # TLE data 
-    tleF     = os.path.join( test_helpers.get_test_dir(), '19548.tle' )
-    #tleF     = os.path.join( test_helpers.get_test_dir(), '40294.tle' )
-    with open( tleF ) as F: lines = F.readlines()
-    L1 = lines[0].strip()
-    L2 = lines[1].strip()
-
-    # load obs 
-    #obsF      = os.path.join( test_helpers.get_test_dir(), '19548.json.gz' )
-    obsF      = '~/Downloads/cache.json.gz'
-    print(obsF)
-    #obsF      = os.path.join( test_helpers.get_test_dir(), '40294.json.gz' )
-    obs_df    = pd.read_json( obsF ).sort_values(by='obTime')
-    print('See {} obs'.format( obs_df.shape[0] ))
-    st = time.time()
-    # reformat UDL obs (these are our actual TEST obs ; from a sensor)
-    obs_df    = observations.prepUDLObs( obs_df, PA )
-
+# -----------------------------------------------------------------------------------------------------
+def UDL_ROTAS( obs_df : pd.DataFrame,
+               L1  : str,
+               L2  : str,
+               PA ) :
+    '''
+    this routine takes prepared UDL obs and a two line elment set
+    and produces ROTAS-like output
+    '''
     # now that those have the correct date fields, peel the dates out of the obs.. we'll need those later
     date_df   = obs_df[ astro_time.DATE_FIELDS ].copy()
     # get a sensor frame (from the OBS again; we're using those ground sensors)
@@ -169,7 +151,8 @@ if __name__ == '__main__':
     residuals_df = residuals.UDL_residuals( obs_df, looks_df )
 
     # delta_nu -> equation (6) from ROTAS : atan( U_o \dot V_c / U_o \dot U_c ) 
-    # (notation is wrong in document; replace U_c with O_i (observed unit vector)
+    # (notation is wrong in document; the observed unit vector should appear in numerator and denominator
+    # replace one U_c in numerator and denominator with O_i (observed unit vector)
     V_c = np.vstack( eph_df['V_c'] )
     U_c = np.vstack( eph_df['U_c'] )
     O_i = np.vstack( obs_df['teme_lv'] )
@@ -194,7 +177,38 @@ if __name__ == '__main__':
     n        = np.sqrt( 398600.5 / eph_df['XA_KEP_A'] ** 3)
     del_t    = (Mc - Mo) / n
     residuals_df['del_t'] = del_t
-    print('Total run time : {:10.3f}'.format( time.time() - st ))
+    return residuals
+
+# =====================================================================================================
+if __name__ == '__main__':
+    import os
+    import time
+    import public_astrostandards as PA
+    from . import test_helpers
+    PA.init_all()
+
+    # load the stored time constants file 
+    astro_time.load_time_constants( test_helpers.get_test_time_constants(), PA )
+
+    # TLE data 
+    tleF     = os.path.join( test_helpers.get_test_dir(), '19548.tle' )
+    #tleF     = os.path.join( test_helpers.get_test_dir(), '40294.tle' )
+    with open( tleF ) as F: lines = F.readlines()
+    L1 = lines[0].strip()
+    L2 = lines[1].strip()
+
+    # load obs 
+    #obsF      = os.path.join( test_helpers.get_test_dir(), '19548.json.gz' )
+    #obsF      = os.path.join( test_helpers.get_test_dir(), '40294.json.gz' )
+    obsF      = '~/Downloads/cache.json.gz'
+    obs_df    = pd.read_json( obsF )
+    # reformat UDL obs (these are our actual TEST obs ; from a sensor)
+    obs_df    = observations.prepUDLObs( obs_df, PA )
+    obs_df    = obs_df.iloc[0:100000]
+    print('See {} obs'.format( obs_df.shape[0] ))
+
+    output = UDL_ROTAS( obs_df, L1, L2, PA )
+    print(output)
 
 #    print('{:20} {:20} '.format( 'Calc/plane range','Obs range'))
 #    for A,B in zip(ranges,obs_df['range']):

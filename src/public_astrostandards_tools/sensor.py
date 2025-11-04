@@ -2,64 +2,7 @@ import sys
 import ctypes
 import numpy as np
 import pandas as pd
-
-# -----------------------------------------------------------------------------------------------------
-def llh_to_eci( df : list[ float ],
-                INTERFACE ) :
-    '''
-    given a lat / lon / alt tuple and a set of astrostandard epoch'd dates,
-    give back the ECI position (TEME)
-
-    df must have columns 'lat', 'lon', 'height', and 'ds50_utc'
-    '''
-    sen_eci = (ctypes.c_double * 3)()
-    def getECI( R ):
-        llh = (ctypes.c_double * 3)( R['lat'], R['lon'], R['height'] )
-        INTERFACE.AstroFuncDll.LLHToXYZTime( R['ds50_utc'], llh, sen_eci )
-        return list( sen_eci )
-    df['teme_p'] =  df.apply( getECI, axis=1 )
-    return df
-
-# -----------------------------------------------------------------------------------------------------
-def llh_to_efg( df : list[ float ],
-                INTERFACE) :
-    '''
-    given a lat / lon / height tuple ,
-    give back the EFG position (ECEF)
-
-    df must have columns 'lat', 'lon', 'height'
-    '''
-    sen_efg = (ctypes.c_double * 3)()
-    def getEFG( R ):
-        llh = (ctypes.c_double * 3)(R['lat'], R['lon'], R['height'])
-        INTERFACE.AstroFuncDll.LLHToEFGPos(llh, sen_efg)
-        return list( sen_efg )
-    df['efg_p'] = df.apply( getEFG, axis=1 )
-    return df
-
-# -----------------------------------------------------------------------------------------------------
-def eci_to_llh( df : list[ float ],
-                INTERFACE ) :
-    '''
-    given a dataframe with columns `teme_p` and `ds50_utc`, covert the 
-    eci coordinates to llh
-
-    df must have 'teme_p' and 'ds50_utc'
-    '''
-    llh  = (ctypes.c_double * 3)()
-    
-    def getLLH( R ):
-        eci = (ctypes.c_double * 3)( *R['teme_p'] )
-
-        INTERFACE.AstroFuncDll.XYZToLLHTime( R['ds50_utc'], eci, llh )
-
-        return list( llh )
-    
-    tv = df.apply( getLLH, axis=1 )
-    df['lat']    = [ T[0] for T in tv ]
-    df['lon']    = [ T[1] for T in tv ]
-    df['height'] = [ T[2] for T in tv ]
-    return df
+from . import coordinates
 
 
 # -----------------------------------------------------------------------------------------------------
@@ -126,8 +69,8 @@ def compute_looks(
         lon
         theta
 
-    if you're a ground-based sensor, make sure to use llh_to_eci to annotate your frame with eci data
-    if you're a space-based sensor, make sure you use eci_to_llh to get your lon field
+    if you're a ground-based sensor, make sure to use LLH_to_TEME to annotate your frame with eci data
+    if you're a space-based sensor, make sure you use TEME_to_LLH to get your lon field
 
     once you do that, you can run this function and it'll compute looks (of course, some fields might not 
     make sense.. if you compute az/el for a space-based sensor.. that means.. something)
@@ -183,7 +126,7 @@ def prepUDLSensor( obs_df : pd.DataFrame, INTERFACE ):
     '''
     sensor_df  = obs_df[['ds50_utc','senlat','senlon','senalt','theta']].copy()
     sensor_df  = sensor_df.rename( columns = {'senlat' : 'lat','senlon' : 'lon', 'senalt' : 'height' } )
-    sensor_df  = llh_to_eci( sensor_df, INTERFACE )
+    sensor_df  = coordinates.LLH_to_TEME( sensor_df, INTERFACE )
     return sensor_df
 
 # -----------------------------------------------------------------------------------------------------
@@ -216,12 +159,12 @@ def test():
     # make a target frame
     target_f = dates_f.copy()
 
-    # test the llh_to_eci function
+    # test the LLH_to_TEME function
     sensor_f['lat']     = 38.83 
     sensor_f['lon']     = -104.82
     sensor_f['height']  = 1.832
     # we need ECI to feed later routines
-    sensor_f = llh_to_eci( sensor_f, harness )
+    sensor_f = coordinates.LLH_to_TEME( sensor_f, harness )
 
     # annotate that dataframe wih the sun position
     target_f['teme_p']  = sun_at_time( dates_f, harness ) 
