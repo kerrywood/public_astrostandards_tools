@@ -119,6 +119,7 @@ class tle_fitter:
         else:
             self.mm_brouwer = self.init_tle['XA_TLE_MNMOTN']
             self._brouwer_to_kozai()
+        return self
             
     def set_type0( self ):
         self.tle_type = 0
