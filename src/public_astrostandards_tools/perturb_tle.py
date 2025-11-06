@@ -78,9 +78,7 @@ def anomaly_TLE(TF : tle_fitter.tle_fitter,
         return orbit_utils.XA_TLE_to_str( XA_TLE_new, TF.PA, satno = sno )
 
     str_XA = [ genNewTLE( X, Y ) for X,Y in zip( new_anomaly, satnos ) ]
-    for q in str_XA: print('\n'.join(q))
     return str_XA
-
 
 # -----------------------------------------------------------------------------------------------------
 def perturbTLE( EF : tle_fitter.tle_fitter,
