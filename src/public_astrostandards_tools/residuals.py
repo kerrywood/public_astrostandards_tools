@@ -46,7 +46,7 @@ def getUVW( sv_df : pd.DataFrame ):
 # 
 # ROTAS tries to calculate important metrics like TOES and BETA from a single ob, including EO / angles
 # only.  We'll try to mimic / improve upon those functions here.  Reference the RotasDll library 
-# documentation or the Ford Pilco Astrodynamics reference for background.
+# documentation or the Ford Philco Astrodynamics reference for background.
 # 
 # BLUF:
 # we need to guess the object position ( UDL EO are angles-only; that obviously doesn't tell us where 
@@ -97,7 +97,7 @@ def plane_intersection(
 
     # TODO: if the denominator is zero.. we are coplanar('ish); need another method
     # badidx = np.abs( den ) < 1e-3  # what is the right limit here?
-    ranges =num / den
+    ranges = num / den
     return ranges, obslv*ranges[:,np.newaxis]
 
 # -----------------------------------------------------------------------------------------------------
@@ -149,17 +149,22 @@ def UDL_ROTAS( obs_df : pd.DataFrame,
     looks_df['guess_ranges'] = ranges
     looks_df['guess_points'] = intersect_points.tolist()
     residuals_df = residuals.UDL_residuals( obs_df, looks_df )
+    residuals_df['ranges']   = ranges
 
     # delta_nu -> equation (6) from ROTAS : atan( U_o \dot V_c / U_o \dot U_c ) 
     # (notation is wrong in document; the observed unit vector should appear in numerator and denominator
     # replace one U_c in numerator and denominator with O_i (observed unit vector)
     V_c = np.vstack( eph_df['V_c'] )
     U_c = np.vstack( eph_df['U_c'] )
+    W_c = np.vstack( eph_df['W_c'] )
     O_i = np.vstack( obs_df['teme_lv'] )
     num = np.sum( O_i * V_c , axis=1 )
     den = np.sum( O_i * U_c , axis=1 )
     del_nu = np.arctan2( num, den )
     residuals_df['del_nu'] = del_nu.tolist()
+
+    # equation (15) RotasDLL documentation (V9.6)
+    residuals_df['beta']   = np.arcsin( np.sum( O_i * W_c, axis=1 ) )  
 
     # approximate true anomaly from hypothesis (computed) and the delta-nu value
     nu_c      = eph_df['XA_KEP_TA']
@@ -177,10 +182,10 @@ def UDL_ROTAS( obs_df : pd.DataFrame,
     n        = np.sqrt( 398600.5 / eph_df['XA_KEP_A'] ** 3)
     del_t    = (Mc - Mo) / n
     residuals_df['del_t'] = del_t
-    return residuals
+    return residuals_df
 
-# =====================================================================================================
-if __name__ == '__main__':
+# -----------------------------------------------------------------------------------------------------
+def test():
     import os
     import time
     import public_astrostandards as PA
@@ -198,18 +203,23 @@ if __name__ == '__main__':
     L2 = lines[1].strip()
 
     # load obs 
-    #obsF      = os.path.join( test_helpers.get_test_dir(), '19548.json.gz' )
     #obsF      = os.path.join( test_helpers.get_test_dir(), '40294.json.gz' )
     obsF      = '~/Downloads/cache.json.gz'
-    obs_df    = pd.read_json( obsF )
+    obs_df    = pd.read_json( obsF )[:500000]  # limit to 500k obs
     # reformat UDL obs (these are our actual TEST obs ; from a sensor)
+    start_t   = time.time()
     obs_df    = observations.prepUDLObs( obs_df, PA )
-    obs_df    = obs_df.iloc[0:100000]
     print('See {} obs'.format( obs_df.shape[0] ))
-
     output = UDL_ROTAS( obs_df, L1, L2, PA )
+    print('That took {} seconds'.format( time.time() - start_t ) )
     print(output)
+    return output
 
 #    print('{:20} {:20} '.format( 'Calc/plane range','Obs range'))
 #    for A,B in zip(ranges,obs_df['range']):
 #        print('{:<20.3f} {:<20.3f} '.format( A,B ) )
+
+
+# =====================================================================================================
+if __name__ == '__main__':
+    test()
