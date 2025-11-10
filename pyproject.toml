@@ -5,7 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "public_astrostandards_tools"
 dependencies= [
-	'numpy'
+	'numpy',
+	'pandas',
+	'scipy'
 ]
 version = "0.0.1"
 authors = [

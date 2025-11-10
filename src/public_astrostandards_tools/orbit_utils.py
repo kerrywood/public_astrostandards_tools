@@ -60,6 +60,7 @@ def sv_to_osc_df( sv_df : pd.DataFrame, PA ) :
             (ctypes.c_double*3)(*D['teme_v']), 
             XA_KEP.data )
         true_anom = PA.AstroFuncDll.CompTrueAnomaly( XA_KEP.data )
+        # NOTE : this dict call is actually kind of expensive (~15% of runtime because we call it so much)
         rv = XA_KEP.toDict()
         rv.update( {'XA_KEP_TA' : true_anom } )
         return rv

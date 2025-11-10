@@ -190,6 +190,13 @@ def test():
     import time
     import public_astrostandards as PA
     from . import test_helpers
+
+    print()
+    print('*'*100)
+    print('Running tests.')
+    print('*'*100)
+    print()
+
     PA.init_all()
 
     # load the stored time constants file 
