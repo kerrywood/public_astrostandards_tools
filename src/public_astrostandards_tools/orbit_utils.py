@@ -51,6 +51,7 @@ def sv_to_osc_df( sv_df : pd.DataFrame, PA ) :
     ''' 
     given a dataframe with 'teme_p' and 'teme_v' on each row, annotate each row with XA_KEP data
     '''
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
     # getting a helpers object is expensive, so rather than re-use the sv_to_osc routine, we'll do 
     # something more efficient here and re-use the holder and a closure
     XA_KEP    = PA.helpers.astrostd_named_fields( PA.AstroFuncDll,  prefix='XA_KEP_' )

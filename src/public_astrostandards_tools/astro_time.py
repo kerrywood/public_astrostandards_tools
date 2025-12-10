@@ -77,7 +77,7 @@ def convert_times( datetimes : list[ datetime ] ,
 
 # -----------------------------------------------------------------------------------------------------
 def test():
-    import test_helpers
+    from . import test_helpers
 
     import public_astrostandards as harness
     # init all the Dll's

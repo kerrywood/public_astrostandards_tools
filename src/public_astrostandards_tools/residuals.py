@@ -211,7 +211,7 @@ def test():
 
     # load obs 
     #obsF      = os.path.join( test_helpers.get_test_dir(), '40294.json.gz' )
-    obsF      = '~/Downloads/cache.json.gz'
+    obsF      = '~/Downloads/obs_100k.json'
     obs_df    = pd.read_json( obsF )[:500000]  # limit to 500k obs
     # reformat UDL obs (these are our actual TEST obs ; from a sensor)
     start_t   = time.time()
@@ -221,10 +221,6 @@ def test():
     print('That took {} seconds'.format( time.time() - start_t ) )
     print(output)
     return output
-
-#    print('{:20} {:20} '.format( 'Calc/plane range','Obs range'))
-#    for A,B in zip(ranges,obs_df['range']):
-#        print('{:<20.3f} {:<20.3f} '.format( A,B ) )
 
 
 # =====================================================================================================

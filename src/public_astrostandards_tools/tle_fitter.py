@@ -112,6 +112,7 @@ class tle_fitter:
         self.original_line1 = L1
         self.original_line2 = L2
         self.init_tle, self.init_str = TLE_str_to_XA_TLE( L1, L2, self.PA )
+        self.new_tle, self.init_str = TLE_str_to_XA_TLE( L1, L2, self.PA )
         self.tle_type  = self.init_tle['XA_TLE_EPHTYPE']
         if self.tle_type:
             self.mm_kozai   = self.init_tle['XA_TLE_MNMOTN']
@@ -213,8 +214,20 @@ class tle_fitter:
 if __name__ == '__main__':
     import pandas as pd
     import public_astrostandards as PA
-    import astro_time
-    import sgp4
+    from . import astro_time
+    from . import sgp4
 
-    A = tle_fitter()
+    # test that we can init
+    PA.init_all()
+    A = tle_fitter( PA )
+    # some test data 
+    L1 = '1 65852U 25222B   25288.68933563  .00003928  00000-0  37425-3 0  9993'
+    L2 = '2 65852  34.9972 289.2339 0005950 115.6056 244.5265 14.92883023  2461'
 
+    # set from data 
+    print('Original TLE')
+    A.set_from_lines( L1, L2 )
+    print('\n'.join(A.getLines()))
+    print('Cleared nonconservatives TLE')
+    A.clear_nonconservatives()
+    print('\n'.join(A.getLines()))

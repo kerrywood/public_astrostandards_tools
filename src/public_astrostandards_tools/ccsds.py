@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import numpy as np
 import pandas as pd
+from . import astro_time
    
 # -----------------------------------------------------------------------------------------------------
 def toCCSDS( df : pd.DataFrame ):
@@ -20,12 +21,14 @@ def toCCSDS( df : pd.DataFrame ):
     odf['j2k_dx']    = df['j2k_v'].apply( lambda X: X[0] )
     odf['j2k_dy']    = df['j2k_v'].apply( lambda X: X[1] )
     odf['j2k_dz']    = df['j2k_v'].apply( lambda X: X[2] )
-    return odf.to_csv( index=None , sep='\t' )
+    return odf.to_csv( index=None , sep='\t', header=None )
 
 # -----------------------------------------------------------------------------------------------------
 def fromCCSDS( lines, harness ): 
     '''
     lines : file data
+
+    return an annotated pandas dataframe (in standard coordinate format with j2k_p, and j2k_v headers
     '''
     def parseLine(L):
         try:
@@ -41,28 +44,47 @@ def fromCCSDS( lines, harness ):
     dt_df = astro_time.convert_times( tv['datetime'], harness ).drop( columns='datetime' )
     return pd.concat( (dt_df.reset_index(drop=True), tv.reset_index(drop=True) ), axis=1 )
 
-# =====================================================================================================
-if __name__ == '__main__':
+# -----------------------------------------------------------------------------------------------------
+def test():
     import public_astrostandards as PA
     from . import astro_time
     from . import sgp4
     from . import test_helpers
+    from . import coordinates
 
+    # init the astrostandards 
     PA.init_all()
-
     astro_time.load_time_constants(  test_helpers.get_test_time_constants(), PA )
 
+    # test TLE
     L1 = '1 25544U 98067A   25301.52216109  .00016210  00000-0  29595-3 0  9990'
     L2 = '2 25544  51.6346   6.3420 0004740 349.4592  10.6297 15.49553329535849'
-
-    DATES      = pd.date_range('2025-11-1', '2025-12-1', freq='5min')
+    
+    # generate some test data
+    print('*'*100)
+    print('Propagating test TLE and converting to J2K')
+    print('\t{}\n\t{}'.format( L1, L2 ) )
+    print('*'*100)
+    print()
+    DATES      = pd.date_range('2025-11-1', '2025-11-2', freq='5min')
     dates_f    = astro_time.convert_times( DATES, PA )
     original_f = sgp4.propTLE_df( dates_f, L1, L2, PA )
-    to_j2k     = TEME_to_J2K( original_f.copy(), PA ) 
+    to_j2k     = coordinates.TEME_to_J2K( original_f.copy(), PA ) 
 
-    from_j2k   = J2K_to_TEME( to_j2k, PA )
-
-    X  = toCCSDS( from_j2k ) 
+    X  = toCCSDS( to_j2k )
+    print('*'*100)
+    print('CCSDS output')
+    print('*'*100)
     print(X)
+
+    print('*'*100)
+    print('PANDAS from CCSDS output')
+    print('*'*100)
     Y  = fromCCSDS( X.split('\n'), PA )
     print(Y)
+    print(Y.iloc[0])
+
+
+# =====================================================================================================
+if __name__ == '__main__':
+    test()
