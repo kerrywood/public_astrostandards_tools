@@ -105,23 +105,25 @@ def test():
     import public_astrostandards as PA
     PA.init_all()
 
+    # this is a type-4 faked by a modified from a space-track TLE
+    L1 = '1 25544U 98067A   24365.67842578  .00000000  00000-0  00000-0 4  9990'
+    L2 = '2 25544  51.6404  61.8250 0005853  25.4579 117.0387 15.50482079489028'
+
     print('-'*100)
     print('Performing fit test')
     print()
     # example TLE 
-    # this is a type-4 faked by a modified from a space-track TLE
-    L1 = '1 25544U 98067A   24365.67842578  .00000000  00000-0  00000-0 4  9990'
-    L2 = '2 25544  51.6404  61.8250 0005853  25.4579 117.0387 15.50482079489028'
     # this is your fit range
-    #DATES = pd.date_range( '2025-1-7', '2025-1-9', freq='5min' )
+    # DATES = pd.date_range( '2025-1-7', '2025-1-9', freq='5min' )
     DATES = pd.date_range( '2025-6-1', '2025-6-2', freq='5min' )
+
 
     # setup the job
     EH = ephem_fitter( PA ).set_from_tle(L1, L2, DATES ).set_satno(77777).set_type0()
 
     print('-'*100)
     print('Fitting :\n\t{}\n\t{}'.format( L1, L2 ) )
-    print('\t{} -- {}'.format( DATES[0], DATES[-1] ) )
+    print('\tto: {} -- {}'.format( DATES[0], DATES[-1] ) )
     print('\t{} points'.format( len(DATES) ) )
     print('-'*100)
     print()
@@ -129,11 +131,11 @@ def test():
     output = EH.fit_tle( )
 
     print()
-    print('Your original TLE was')
+    print('\nYour original TLE was')
     print('\n'.join( [L1,L2] ) ) 
 
 
-    print('Your new TLE is :')
+    print('\nYour new TLE is :')
     print('\n'.join( output.getLines() ) )
     
 

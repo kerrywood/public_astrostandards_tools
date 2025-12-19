@@ -38,7 +38,11 @@ def propTLE_byID_df( tleid,
                 tle_df,
                 INTERFACE,
                 clear_all = True ):
-
+    '''
+    this function assumes that your TLE has already been loaded into the AstroStandards
+    pass in the ID.  This is useful when you're modifying a TLE via the array, or you
+    don't want to parse and re-parse
+    '''
     assert initTLE( tleid, INTERFACE ) 
     eph   = propTLEToDS50s( tleid, tle_df['ds50_utc'] , INTERFACE )
     tle_df['teme_p'] = eph[:,1:4].tolist()
