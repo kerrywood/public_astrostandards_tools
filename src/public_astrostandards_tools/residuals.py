@@ -205,7 +205,10 @@ def slatton_intersection(
     R1 = -B + np.sqrt( discrim )
     R2 = -B - np.sqrt( discrim )
     den = 2 * A
-    
+    # if discrim == 0: there is one solution for range (ex: ground-based looking at GEO)
+    # if discrim < 0 : there is no solution for range (ex: GEO looking outside GEO)
+    # if discrim > 0 : GEO looking through GEO sphere; two solutions for range
+    print(discrim)
     return np.vstack( (R1 / den, R2 / den ) ).T
 
 # -----------------------------------------------------------------------------------------------------

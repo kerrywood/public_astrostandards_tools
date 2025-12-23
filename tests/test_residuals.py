@@ -3,7 +3,7 @@ import public_astrostandards as PA
 import public_astrostandards_tools as PAT
 
 
-# run the simple test
+# run the simple test (this is a stand-alone test)
 # PAT.residuals.test()
 
 # init the astrostandards
@@ -11,7 +11,7 @@ PA.init_all()
 # use the TimeFunc to load the time parameters file (need to upate this periodically)
 PAT.astro_time.load_time_constants(  PAT.test_helpers.get_test_time_constants(), PA )
 
-# some input TLE ; hand-modify a TLE as our "error orbit" (actual is the hypothesis, mod is the observed)
+# some input TLE ; hand-modify a TLE as our "error orbit" (we'll use an error orbit to fake obs with noise)
 # in this case, we'll just truncate mean motion and inclination (look at those fields)
 ISS = ('1 25544U 98067A   25357.18166772  .00011641  00000-0  21351-3 0  9998','2 25544  51.6323  90.7678 0003190 289.6661  70.3984 15.49746572544475')
 TDRS_actual = ('1 27566U 02055A   25357.24095851  .00000061  00000-0  00000-0 0  9991','2 27566   9.7383  44.3591 0016647 235.9259 132.2209  0.98860736 84461')
@@ -45,5 +45,5 @@ residuals['dec_arcsec'] = residuals['residual_dec'] * 3600
 # print(residuals)
 
 # print(looks.columns)
-print( PAT.residuals.slatton_intersection( looks, ISS_frame) )
-print(ISS_frame)
+slatton = PAT.residuals.slatton_intersection( looks, ISS_frame) 
+print(slatton)
