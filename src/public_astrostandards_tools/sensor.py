@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 from . import coordinates
 
-
 # -----------------------------------------------------------------------------------------------------
 def sun_at_time(  df : pd.DataFrame, # must have the times set
                   INTERFACE ):
@@ -110,6 +109,11 @@ def compute_looks(
 
     ans =  pd.DataFrame.from_records( tdf.apply( calcLooks, axis=1 ).values )
     rv = pd.concat( (tdf.reset_index(drop=True),ans.reset_index(drop=True)), axis=1 ) 
+
+    # also compute the TEME look vector
+    teme_lv = np.vstack( rv['teme_p_target'] ) - np.vstack( rv['teme_p_sensor'] )
+    teme_lv = teme_lv / np.linalg.norm( teme_lv, axis=1 )[:,np.newaxis]
+    rv['teme_lv'] = teme_lv.tolist()
     return rv
 
 
@@ -130,80 +134,17 @@ def prepUDLSensor( obs_df : pd.DataFrame, INTERFACE ):
     return sensor_df
 
 # -----------------------------------------------------------------------------------------------------
-def test():
-    from datetime import datetime,timedelta,timezone
-    import public_astrostandards as harness
-
-    from . import astro_time 
-    from . import sgp4 
-    from . import test_helpers
-
-    # init all the Dll's
-    harness.init_all()
-
-    # use the TimeFunc to load the time parameters file (need to upate this periodically)
-    astro_time.load_time_constants(  test_helpers.get_test_time_constants(), harness )
-
-    # generate some test data
-    dates = pd.date_range( '2025-10-15', '2025-10-25',  freq='1min' )
-
-    # use the astro_time to initialize the dataframe with times
-    # note that the sensor and target dataframes must be time aligned
-    dates_f = astro_time.convert_times( dates, harness )
-
-    # -----------------------------------------------------------------------------------------------------
-    # TEST case 1 : look vectors to sun; find out when sun is down
-    # make a sensor frame
-    sensor_f = dates_f.copy()
-    
-    # make a target frame
-    target_f = dates_f.copy()
-
+def setup_ground_site( dates_df : pd.DataFrame,
+                       lat : float,
+                       lon : float,
+                       alt : float,
+                       INTERFACE ):
+    # for now, modify the passed in dataframe
+    sensor_f = dates_df
     # test the LLH_to_TEME function
-    sensor_f['lat']     = 38.83 
-    sensor_f['lon']     = -104.82
-    sensor_f['height']  = 1.832
+    sensor_f['lat']     = lat
+    sensor_f['lon']     = lon
+    sensor_f['height']  = alt
     # we need ECI to feed later routines
-    sensor_f = coordinates.LLH_to_TEME( sensor_f, harness )
-
-    # annotate that dataframe wih the sun position
-    target_f['teme_p']  = sun_at_time( dates_f, harness ) 
-    
-    # compute looks to the sun
-    looks_f = compute_looks( sensor_f, target_f, harness )
-
-    # find those times when the sun is down; NOTE we're indexing subsets of the DATE and SENSOR frame
-    dates_sundown_f  = dates_f[ looks_f['XA_TOPO_EL'] < -4 ].copy()
-    sensor_sundown_f = sensor_f[ looks_f['XA_TOPO_EL'] < -4 ].copy()
-
-    # -----------------------------------------------------------------------------------------------------
-    # TEST case 2 : now that we know when sun is down, can we find those times when ISS is visible?
-    # for now, ignore if it is solar illuminated
-    # re-use the dates  
-    #L1 = '1 25544U 98067A   25288.29939280  .00010825  00000-0  20343-3 0  9998'
-    #L2 = '2 25544  51.6325  71.7910 0004132 294.0373  66.0183 15.49128438522904'
-    L1 = '1 65852U 25222B   25288.68933563  .00003928  00000-0  37425-3 0  9993'
-    L2 = '2 65852  34.9972 289.2339 0005950 115.6056 244.5265 14.92883023  2461'
-    sensor_f['lat']     = 38.83 
-    sensor_f['lon']     = -104.82
-    sensor_f['height']  = 1.832
-
-    # note that we're only checking at those times that the sun is down
-    # this limits the propagation calls (more efficient)
-    target_f = sgp4.propTLE_df( dates_sundown_f, L1, L2, harness ) 
-    # check if the target is sunlit... (annotate each row)
-    target_f['is_sunlit'] = is_sunlit( target_f, harness )
-    # now compute the actual looks....
-    looks_f = compute_looks( sensor_sundown_f, target_f, harness )
-
-    # note that here, _target is appended to a field we pushed into compute_looks
-    # so we look for _is_sunlit_target
-    good = looks_f[ (looks_f['XA_TOPO_EL'] > 5) * (looks_f['is_sunlit_target'] == 1 ) ] 
-    pd.set_option('display.max_rows', None)
-    print( good[['datetime_sensor','XA_TOPO_EL','XA_TOPO_AZ','XA_TOPO_RANGE','is_sunlit_target']].head(100) )
-
-    
-
-# =====================================================================================================
-if __name__ == "__main__":
-    test()
+    sensor_f = coordinates.LLH_to_TEME( sensor_f, INTERFACE )
+    return sensor_f

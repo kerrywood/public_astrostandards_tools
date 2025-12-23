@@ -50,7 +50,6 @@ def UDL_rotate_TEME_df( df, harness ):
     df['teme_lv'] = ra_dec_to_lv( df['teme_ra'], df['teme_dec'] )
     return df
 
-
 # -----------------------------------------------------------------------------------------------------
 # grab some raw UDL obs; convert the time; sort
 def prepUDLObs( o_df, harness ):
@@ -66,3 +65,19 @@ def prepUDLObs( o_df, harness ):
     return o_df 
     
 # -----------------------------------------------------------------------------------------------------
+def synthetic_to_UDL_like(  
+                          sensor_df : pd.DataFrame,
+                          obs_df    : pd.DataFrame
+                          ) : 
+    '''
+    this maps outputs from our `compute_looks` function to a UDL-like output
+    (useful for testing)
+    '''
+    sensor_df['teme_ra']  = obs_df['XA_TOPO_RA']   # these are already in TEME, good to go.. no need to convert from J2K
+    sensor_df['teme_dec'] = obs_df['XA_TOPO_DEC']
+    sensor_df['range']    = obs_df['XA_TOPO_RANGE']
+    sensor_df['senlat']   = sensor_df['lat']
+    sensor_df['senlon']   = sensor_df['lon']
+    sensor_df['senalt']   = sensor_df['height']
+    sensor_df['teme_lv']  = ra_dec_to_lv( sensor_df['teme_ra'], sensor_df['teme_dec'] ).tolist()
+    return sensor_df

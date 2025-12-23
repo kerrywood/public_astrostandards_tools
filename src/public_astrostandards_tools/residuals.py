@@ -79,7 +79,7 @@ def plane_intersection(
 
     Assumes some geometric diversity; if co-planar, this will fail
     '''
-    # test ephemeris / computed location
+    # test ephemeris / computed location (used to compute orbit plane)
     temep = np.vstack( eph_df['teme_p'] )
     temev = np.vstack( eph_df['teme_v'] )
     # sensor eci vector
@@ -112,15 +112,15 @@ def UDL_residuals( udl_obs : pd.DataFrame, hypothesis_obs : pd.DataFrame ):
     '''
     rv = pd.DataFrame()
     if 'teme_ra' in udl_obs   : 
-        rv['ra']    = shortestAngle( udl_obs['teme_ra'] - hypothesis_obs['XA_TOPO_RA'] )
+        rv['residual_ra']    = shortestAngle( udl_obs['teme_ra'] - hypothesis_obs['XA_TOPO_RA'] )
     if 'teme_dec' in udl_obs  : 
-        rv['dec']   = shortestAngle( udl_obs['teme_dec'] - hypothesis_obs['XA_TOPO_DEC'] )
+        rv['residual_dec']   = shortestAngle( udl_obs['teme_dec'] - hypothesis_obs['XA_TOPO_DEC'] )
     if 'azimuth' in udl_obs   : 
-        rv['az']    = shortestAngle( udl_obs['azimuth'] - hypothesis_obs['XA_TOPO_AZ'] )
+        rv['residual_az']    = shortestAngle( udl_obs['azimuth'] - hypothesis_obs['XA_TOPO_AZ'] )
     if 'elevation' in udl_obs : 
-        rv['el']    = shortestAngle( udl_obs['elevation'] - hypothesis_obs['XA_TOPO_EL'] )
+        rv['residual_el']    = shortestAngle( udl_obs['elevation'] - hypothesis_obs['XA_TOPO_EL'] )
     if 'range' in udl_obs     : 
-        rv['range'] =  udl_obs['range'] - hypothesis_obs['XA_TOPO_RANGE'] 
+        rv['residual_range'] =  udl_obs['range'] - hypothesis_obs['XA_TOPO_RANGE'] 
     return rv
 
 # -----------------------------------------------------------------------------------------------------
@@ -152,7 +152,7 @@ def UDL_ROTAS( obs_df : pd.DataFrame,
     looks_df['guess_ranges'] = ranges
     looks_df['guess_points'] = intersect_points.tolist()
     residuals_df = residuals.UDL_residuals( obs_df, looks_df )
-    residuals_df['ranges']   = ranges
+    residuals_df['plane_intersect_ranges']   = ranges
 
     # delta_nu -> equation (6) from ROTAS : atan( U_o \dot V_c / U_o \dot U_c ) 
     # (notation is wrong in document; the observed unit vector should appear in numerator and denominator
@@ -189,8 +189,24 @@ def UDL_ROTAS( obs_df : pd.DataFrame,
     return residuals_df
 
 # -----------------------------------------------------------------------------------------------------
-def slatton_fixed_range( ):
-    pass
+# Slatton's spherical intersection 
+# (Methods of Processing Geosynchronous Breakups, Slatton and Thurston, AMOS 2018)
+# -----------------------------------------------------------------------------------------------------
+def slatton_intersection( 
+                       obs_df : pd.DataFrame,   # observations (calculated from the sensor to the hypothesis)
+                       sen_df : pd.DataFrame,
+                       RADIUS = 42164 ):
+    rho = np.vstack( obs_df['teme_lv'] )
+    R   = np.vstack( sen_df['teme_p'] )
+    A   = np.sum( rho * rho, axis = 1 )  # row-by-row of rho-dot-rho
+    B   = 2 * np.sum( rho * R, axis=1 )  # row-by-row of rho-dot-R
+    C   = np.sum( R * R, axis=1 ) - RADIUS ** 2
+    discrim = B**2 - 4 * A * C
+    R1 = -B + np.sqrt( discrim )
+    R2 = -B - np.sqrt( discrim )
+    den = 2 * A
+    
+    return np.vstack( (R1 / den, R2 / den ) ).T
 
 # -----------------------------------------------------------------------------------------------------
 def test():
@@ -232,6 +248,9 @@ def test():
     print('That took {} seconds'.format( time.time() - start_t ) )
     print(output)
     return output
+
+# -----------------------------------------------------------------------------------------------------
+
 
 
 # =====================================================================================================
