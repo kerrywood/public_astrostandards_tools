@@ -6,3 +6,4 @@ from . import egp
 from . import sensor
 from . import udl_eo_fitter
 from . import residuals
+from . import utils

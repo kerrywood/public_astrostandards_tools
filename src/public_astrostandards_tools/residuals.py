@@ -203,20 +203,23 @@ def test():
     astro_time.load_time_constants( test_helpers.get_test_time_constants(), PA )
 
     # TLE data 
-    tleF     = os.path.join( test_helpers.get_test_dir(), '19548.tle' )
-    #tleF     = os.path.join( test_helpers.get_test_dir(), '40294.tle' )
+    tleF     = os.path.join( test_helpers.get_data_dir(), '19548.tle' )
+    print('.. loading {}'.format( tleF ) )
+    #tleF     = os.path.join( test_helpers.get_data_dir(), '40294.tle' )
     with open( tleF ) as F: lines = F.readlines()
     L1 = lines[0].strip()
     L2 = lines[1].strip()
 
     # load obs 
-    #obsF      = os.path.join( test_helpers.get_test_dir(), '40294.json.gz' )
+    #obsF      = os.path.join( test_helpers.get_data_dir(), '40294.json.gz' )
     obsF      = '~/Downloads/obs_100k.json'
-    obs_df    = pd.read_json( obsF )[:500000]  # limit to 500k obs
+    print('.. loading obs {}'.format( obsF ) )
+    obs_df    = pd.read_json( obsF )  # limit to 500k obs
     # reformat UDL obs (these are our actual TEST obs ; from a sensor)
     start_t   = time.time()
     obs_df    = observations.prepUDLObs( obs_df, PA )
-    print('See {} obs'.format( obs_df.shape[0] ))
+    print('.. see {} obs'.format( obs_df.shape[0] ))
+    print('.. running ROTAS')
     output = UDL_ROTAS( obs_df, L1, L2, PA )
     print('That took {} seconds'.format( time.time() - start_t ) )
     print(output)

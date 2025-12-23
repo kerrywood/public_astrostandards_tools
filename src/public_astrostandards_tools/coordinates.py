@@ -180,6 +180,10 @@ def test( ) :
     from . import sgp4
     from . import test_helpers
 
+    print('*'*100)
+    print('Will convert random coordinates from one frame to another and back.. then quantify error')
+    print('*'*100)
+
     # init the astrostandards (this starts logging)
     PA.init_all()
     # load the time constants

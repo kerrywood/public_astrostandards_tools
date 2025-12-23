@@ -11,6 +11,11 @@ def update_time_constants( text ):
     with open( PATH, 'w' ) as F: F.write( text )
     print('Saw {} lines in data'.format( len( text.split('\n') ) ) )
     print('Wrote to : {}'.format( PATH ) )
+    
+# -----------------------------------------------------------------------------------------------------
+def update_from_github( ):
+    data = requests.get( ASTERISM_URL, verify=False )
+    update_time_constants( data.text )
 
 
 # =====================================================================================================
@@ -43,8 +48,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     if args.updategithub:
-        data = requests.get( ASTERISM_URL, verify=False )
-        update_time_constants( data.text )
+        update_from_github()
+        
     if args.updatefile:
         if os.path.isfile( args.updatefile):
             with open( args.updatefile, 'r' ) as F: data = F.read()
