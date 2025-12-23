@@ -3,7 +3,8 @@ import requests
 
 from . import test_helpers
 
-ASTERISM_URL = 'https://raw.githubusercontent.com/AsterismAI/final2000_time_constants/refs/heads/main/daily/reduced_time_constants.dat' 
+# ASTERISM_URL = 'https://raw.githubusercontent.com/AsterismAI/final2000_time_constants/refs/heads/main/daily/reduced_time_constants.dat' 
+ASTERISM_URL = 'https://asterism.ai/timeconstants/reduced_time_constants.dat' 
 
 # -----------------------------------------------------------------------------------------------------
 def update_time_constants( text ):

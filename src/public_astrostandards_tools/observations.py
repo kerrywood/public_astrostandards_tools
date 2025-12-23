@@ -25,6 +25,14 @@ def UDL_rotate_TEME_ob( O , harness ):
     return ( np.float64(newRA),np.float64(newDec) )
 
 # -----------------------------------------------------------------------------------------------------
+def ra_dec_to_lv( ra, dec ):
+    x = np.cos( np.radians(dec) )* np.cos( np.radians( ra ) )
+    y = np.cos( np.radians(dec) ) * np.sin( np.radians( ra ) )
+    z = np.sin( np.radians(dec ) )
+    lv = np.hstack( ( x.values[:,np.newaxis], y.values[:,np.newaxis], z.values[:,np.newaxis] )  )
+    return lv
+
+# -----------------------------------------------------------------------------------------------------
 # rotate a dataframe of obs into TEME and then also get a TEME look vector (for solving)
 def UDL_rotate_TEME_df( df, harness ):
     ''''
@@ -34,11 +42,12 @@ def UDL_rotate_TEME_df( df, harness ):
     tv = df.apply( lambda X : UDL_rotate_TEME_ob( X, harness ) , axis=1 )
     df['teme_ra']  = [ X[0] for X in tv ]
     df['teme_dec'] = [ X[1] for X in tv ]
-    x = np.cos( np.radians(df['teme_dec']) ) * np.cos( np.radians( df['teme_ra'] ) )
-    y = np.cos( np.radians(df['teme_dec']) ) * np.sin( np.radians( df['teme_ra'] ) )
-    z = np.sin( np.radians(df['teme_dec'] ) )
-    lv = np.hstack( ( x.values[:,np.newaxis], y.values[:,np.newaxis], z.values[:,np.newaxis] )  )
-    df['teme_lv'] = lv.tolist()
+    # x = np.cos( np.radians(df['teme_dec']) ) * np.cos( np.radians( df['teme_ra'] ) )
+    # y = np.cos( np.radians(df['teme_dec']) ) * np.sin( np.radians( df['teme_ra'] ) )
+    # z = np.sin( np.radians(df['teme_dec'] ) )
+    # lv = np.hstack( ( x.values[:,np.newaxis], y.values[:,np.newaxis], z.values[:,np.newaxis] )  )
+    # df['teme_lv'] = lv.tolist()
+    df['teme_lv'] = ra_dec_to_lv( df['teme_ra'], df['teme_dec'] )
     return df
 
 

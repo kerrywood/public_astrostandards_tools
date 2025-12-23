@@ -11,4 +11,4 @@ def get_data_dir():
     return os.path.abspath( os.path.join( cwd, '..', '..','data' ) )
 
 def get_test_time_constants():
-    return os.path.join( get_test_dir(), 'reduced_time_constants.dat' )
+    return os.path.join( get_data_dir(), 'reduced_time_constants.dat' )

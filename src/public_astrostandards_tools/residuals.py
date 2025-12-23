@@ -101,8 +101,6 @@ def plane_intersection(
     return ranges, obslv*ranges[:,np.newaxis]
 
 # -----------------------------------------------------------------------------------------------------
-
-# -----------------------------------------------------------------------------------------------------
 def UDL_residuals( udl_obs : pd.DataFrame, hypothesis_obs : pd.DataFrame ):
     '''
     udl_obs :   UDL obs that have gone through prepUDLObs and have been rotated.  Should contain
@@ -113,11 +111,16 @@ def UDL_residuals( udl_obs : pd.DataFrame, hypothesis_obs : pd.DataFrame ):
     TODO : ROTAS-like fields
     '''
     rv = pd.DataFrame()
-    if 'teme_ra' in udl_obs     : rv['ra']    = shortestAngle( udl_obs['teme_ra'] - hypothesis_obs['XA_TOPO_RA'] )
-    if 'teme_dec' in udl_obs    : rv['dec']   = shortestAngle( udl_obs['teme_dec'] - hypothesis_obs['XA_TOPO_DEC'] )
-    if 'azimuth' in udl_obs     : rv['az']    = shortestAngle( udl_obs['azimuth'] - hypothesis_obs['XA_TOPO_AZ'] )
-    if 'elevation' in udl_obs   : rv['el']    = shortestAngle( udl_obs['elevation'] - hypothesis_obs['XA_TOPO_EL'] )
-    if 'range' in udl_obs       : rv['range'] =  udl_obs['range'] - hypothesis_obs['XA_TOPO_RANGE'] 
+    if 'teme_ra' in udl_obs   : 
+        rv['ra']    = shortestAngle( udl_obs['teme_ra'] - hypothesis_obs['XA_TOPO_RA'] )
+    if 'teme_dec' in udl_obs  : 
+        rv['dec']   = shortestAngle( udl_obs['teme_dec'] - hypothesis_obs['XA_TOPO_DEC'] )
+    if 'azimuth' in udl_obs   : 
+        rv['az']    = shortestAngle( udl_obs['azimuth'] - hypothesis_obs['XA_TOPO_AZ'] )
+    if 'elevation' in udl_obs : 
+        rv['el']    = shortestAngle( udl_obs['elevation'] - hypothesis_obs['XA_TOPO_EL'] )
+    if 'range' in udl_obs     : 
+        rv['range'] =  udl_obs['range'] - hypothesis_obs['XA_TOPO_RANGE'] 
     return rv
 
 # -----------------------------------------------------------------------------------------------------
@@ -178,11 +181,16 @@ def UDL_ROTAS( obs_df : pd.DataFrame,
     Eo       = 2 * np.arctan2( ecc_term * tan_V_o , 1 )
     Mc       = Ec - eph_df['XA_KEP_E'] * Ec 
     Mo       = Eo - eph_df['XA_KEP_E'] * Eo
+    
     # calculate the actual TOES (eq. 11)
     n        = np.sqrt( 398600.5 / eph_df['XA_KEP_A'] ** 3)
     del_t    = (Mc - Mo) / n
     residuals_df['del_t'] = del_t
     return residuals_df
+
+# -----------------------------------------------------------------------------------------------------
+def slatton_fixed_range( ):
+    pass
 
 # -----------------------------------------------------------------------------------------------------
 def test():
