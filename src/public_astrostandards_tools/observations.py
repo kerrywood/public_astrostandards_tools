@@ -47,7 +47,7 @@ def UDL_rotate_TEME_df( df, harness ):
     # z = np.sin( np.radians(df['teme_dec'] ) )
     # lv = np.hstack( ( x.values[:,np.newaxis], y.values[:,np.newaxis], z.values[:,np.newaxis] )  )
     # df['teme_lv'] = lv.tolist()
-    df['teme_lv'] = ra_dec_to_lv( df['teme_ra'], df['teme_dec'] )
+    df['teme_lv'] = ra_dec_to_lv( df['teme_ra'], df['teme_dec'] ).tolist()
     return df
 
 # -----------------------------------------------------------------------------------------------------

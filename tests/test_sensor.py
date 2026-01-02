@@ -4,15 +4,26 @@ import pandas as pd
 def test():
     import public_astrostandards as PA
     import public_astrostandards_tools as PAT
+
+    # SETUP info
+    ISS = ('1 25544U 98067A   25357.18166772  .00011641  00000-0  21351-3 0  9998','2 25544  51.6323  90.7678 0003190 289.6661  70.3984 15.49746572544475')
+    dates = pd.date_range( '2025-12-23', '2026-1-15',  freq='1min' )
+    sen_lla = (38.83, -104.82, 1.832 )
+    
+    print('*' * 100)
+    print('This test code will use a historical TLE for ISS to generate look windows (a good reference design for other things')
+    print('TLE:')
+    print('\t{}\n\t{}'.format( *ISS ) )
+    print('Date range:')
+    print('\t{}\n\t{}'.format( dates[0], dates[-1] ))
+    print('Sensor location:')
+    print('\t lat: {:08.3f} lon : {:08.3f} alt : {:08.3f}'.format( *sen_lla ) )
+    print('*' * 100)
     # init all the Dll's
     PA.init_all()
 
     # use the TimeFunc to load the time parameters file (need to upate this periodically)
     PAT.astro_time.load_time_constants(  PAT.test_helpers.get_test_time_constants(), PA )
-
-    # generate some test data
-    ISS = ('1 25544U 98067A   25357.18166772  .00011641  00000-0  21351-3 0  9998','2 25544  51.6323  90.7678 0003190 289.6661  70.3984 15.49746572544475')
-    dates = pd.date_range( '2025-12-23', '2026-1-15',  freq='1min' )
 
     # use the astro_time to initialize the dataframe with times
     # note that the sensor and target dataframes must be time aligned
@@ -23,7 +34,7 @@ def test():
     # -----------------------------------------------------------------------------------------------------
     # TEST case 1 : look vectors to sun; find out when sun is down
     # make a sensor frame
-    sensor_f = PAT.sensor.setup_ground_site( dates_f.copy(), 38.83, -104.82, 1.832, PA )
+    sensor_f = PAT.sensor.setup_ground_site( dates_f.copy(), *sen_lla, PA )
     # annotate that dataframe wih the sun position (why not make this a routine?  Because we can re-use sun position at these times.)
     target_f['teme_p']  = PAT.sensor.sun_at_time( dates_f, PA ) 
     # compute looks to the sun

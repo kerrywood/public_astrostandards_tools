@@ -1,7 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import numpy as np
 import pandas as pd
-import scipy.optimize
 from . import astro_time
 from . import observations
 from . import sgp4
@@ -208,7 +207,6 @@ def slatton_intersection(
     # if discrim == 0: there is one solution for range (ex: ground-based looking at GEO)
     # if discrim < 0 : there is no solution for range (ex: GEO looking outside GEO)
     # if discrim > 0 : GEO looking through GEO sphere; two solutions for range
-    print(discrim)
     return np.vstack( (R1 / den, R2 / den ) ).T
 
 # -----------------------------------------------------------------------------------------------------
