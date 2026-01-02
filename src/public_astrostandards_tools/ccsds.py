@@ -37,6 +37,7 @@ def fromCCSDS( lines, harness ):
             dt   = datetime.strptime(flds[0], '%Y-%m-%dT%H:%M:%S.%f' )
             return (dt, [ float(X) for X in flds[1:4] ], [float(X) for X in flds[4:] ] )
         except Exception as e: 
+            print(e)
             return None
     prsd  = [ parseLine(X) for X in lines ]
     lines = list( filter( lambda X: X is not None, prsd ) )

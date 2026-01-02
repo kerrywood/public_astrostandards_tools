@@ -21,23 +21,25 @@ def subtract_dicts( A, B ):
     # routine to subtract one dict from another (by key) 
     # returns a dict of A - B
     rv = {}
-    for k in A:  rv[k] = A[k] - B[k]
+    for k in A:  
+        rv[k] = A[k] - B[k]
     return rv
 
-# -----------------------------------------------------------------------------------------------------
-def get_perturbed_XA_TLE( matrix, harness ):
-    '''
-    matrix is a Mx6 matrix of M state vectors (to find the perturbation from)
-    '''
-    XA_KEP  = [orbit_utils.sv_to_osc( X, harness).toDict() for X in matrix ]
-    XA_delt = [subtract_dicts( X, epochKep.toDict() ) for X in XA_KEP ]
-    return [ self.perturb_XA_TLE( self.XA_TLE, X ) for X in XA_delt ]
+# # -----------------------------------------------------------------------------------------------------
+# def get_perturbed_XA_TLE( matrix, harness ):
+#     '''
+#     matrix is a Mx6 matrix of M state vectors (to find the perturbation from)
+#     '''
+#     XA_KEP  = [orbit_utils.sv_to_osc( X, harness).toDict() for X in matrix ]
+#     XA_delt = [subtract_dicts( X, XA_KEP.toDict() ) for X in XA_KEP ]
+#     return [ perturb_XA_TLE( XA_TLE, X ) for X in XA_delt ]
 
 # -----------------------------------------------------------------------------------------------------
 def perturb_XA_TLE( XA_TLE_original, XA_KEP_perturb, harness, satno=99999 ):
-    TSTR = harness.Cstr('',512)
+    # TSTR = harness.Cstr('',512)
     XA_TLE_new = harness.helpers.astrostd_named_fields( harness.TleDll, prefix='XA_TLE_' )
-    for k,v in XA_TLE_original.toDict().items(): XA_TLE_new[k] = v
+    for k,v in XA_TLE_original.toDict().items(): 
+        XA_TLE_new[k] = v
     XA_TLE_new[ 'XA_TLE_ECCEN' ]  += XA_KEP_perturb['XA_KEP_E']
     XA_TLE_new[ 'XA_TLE_ECCEN' ]  = np.abs( XA_TLE_new[ 'XA_TLE_ECCEN' ] )
     XA_TLE_new[ 'XA_TLE_INCLI' ]  += XA_KEP_perturb['XA_KEP_INCLI']
@@ -59,15 +61,16 @@ def anomaly_TLE(TF : tle_fitter.tle_fitter,
     break up the anomalies and develop TLE for that
     '''
     # did we get satno's to assign
-    if satnos == None:
+    if satnos is None:
         satnos = range(90000,90000+samples)
     if isinstance(satnos, int):
-        satnos = range( satnos, satnos + len(RIC) )
+        satnos = range( satnos, satnos + samples )
     assert len(satnos) == samples
 
     # our new holder; copy over all the original data
     XA_TLE_new = TF.PA.helpers.astrostd_named_fields( TF.PA.TleDll, prefix='XA_TLE_' )
-    for i,d in enumerate(TF.init_tle.data): XA_TLE_new.data[i] = TF.init_tle.data[i]
+    for i,d in enumerate(TF.init_tle.data): 
+        XA_TLE_new.data[i] = TF.init_tle.data[i]
 
     # linspace 
     new_anomaly  = ( TF.init_tle['XA_TLE_MNANOM'] + np.linspace(0,360,samples) ) % 360
@@ -89,7 +92,7 @@ def perturbTLE( EF : tle_fitter.tle_fitter,
     we'll use this to give back a perturbed set of TLE
     '''
     # did we get satno's to assign
-    if satnos == None:
+    if satnos is None:
         satnos = range(90000,90000+len(RIC))
     if isinstance(satnos, int):
         satnos = range( satnos, satnos + len(RIC) )
@@ -125,41 +128,6 @@ def perturbTLE( EF : tle_fitter.tle_fitter,
     # and turn these back into strings
     str_XA = [orbit_utils.XA_TLE_to_str(X,EF.PA,satno=Y) for X,Y in zip(new_XA,satnos) ]
     return str_XA
-
-# -----------------------------------------------------------------------------------------------------
-def test():
-    import public_astrostandards as PA
-    PA.init_all()
-
-    print('-'*100)
-    print('Performing fit test')
-    print()
-    # example TLE 
-    # this is a type-4 faked by a modified from a space-track TLE
-    L1 = '1 25544U 98067A   24365.67842578  .00000000  00000-0  00000-0 4  9990'
-    L2 = '2 25544  51.6404  61.8250 0005853  25.4579 117.0387 15.50482079489028'
-    # this is your fit range
-    #DATES = pd.date_range( '2025-1-7', '2025-1-9', freq='5min' )
-    DATES = pd.date_range( '2025-6-1', '2025-6-2', freq='5min' )
-
-    # setup the job
-    EH = tle_fitter.tle_fitter( PA ).set_from_lines(L1, L2 ).set_satno(77777).set_type0()
-
-    anomaly_TLE( EH,20 )
-
-    RIC_vecs = [ [.1,.1,.1], [.1,0,0], [0,.1,0], [0,0,.1],[0,2,0],[0,3,0],[3,0,0],[0,0,5],[0,2,3] ]
-    perturbed_set = perturbTLE(EH, RIC_vecs )
-
-    print('-'*100)
-    print('Perturbing:\n{}\n{}'.format( L1,L2 ) )
-    print()
-    print('Epoch : {}'.format(EH.getOriginalEpoch()) )
-    print('RIC perturbations')
-    for V in RIC_vecs:
-        print('{}'.format( V ) )
-    print('TLE')
-    for tle in perturbed_set:
-        print('\n'.join( tle ))
     
 
 # =====================================================================================================
@@ -171,8 +139,6 @@ if __name__ == '__main__':
     import argparse
     import json
     from . import test_helpers
-
-    test()
 
     parser = argparse.ArgumentParser(
         prog='TLE perturb-er',

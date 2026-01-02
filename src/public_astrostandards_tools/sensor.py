@@ -86,7 +86,7 @@ def compute_looks(
     # concat the sensor and target dataframes and append suffixes
     tdf = pd.concat( (df_sensor.reset_index(drop=True).add_suffix('_sensor'), 
                       df_target.reset_index(drop=True).add_suffix('_target')), 
-                    axis=1 )
+                      axis=1 )
     
     def calcLooks( R ):
         lst = np.radians( R['lon_sensor'] ) + R['theta_sensor']

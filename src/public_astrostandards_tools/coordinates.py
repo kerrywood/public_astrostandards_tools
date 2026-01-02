@@ -1,5 +1,5 @@
 import ctypes
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 
@@ -59,7 +59,6 @@ def J2K_to_TEME( j2k : pd.DataFrame , harness ):
         teme_p
         teme_v
     '''
-    j2k_v  = (harness.ctypes.c_double * 3)()
     teme_p = (harness.ctypes.c_double * 3)()
     teme_v = (harness.ctypes.c_double * 3)()
 

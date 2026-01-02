@@ -23,10 +23,8 @@ def propTLEToDS50s( tleid, ds50_l : list[ float ], INTERFACE ):
     and return <ds50><teme_pos (3)><teme_vel (3)>
     '''
     # data holders for OUTPUT
-    ds50 = INTERFACE.ctypes.c_double() 
     pos  = (INTERFACE.ctypes.c_double * 3)()
     vel  = (INTERFACE.ctypes.c_double * 3)()
-    llh  = (INTERFACE.ctypes.c_double * 3)()
 
     def propToDS50( dsutc ):
         INTERFACE.Sgp4PropDll.Sgp4PropDs50UtcPosVel( tleid, dsutc, pos, vel )
@@ -75,9 +73,7 @@ def propTLE_df( dates : pd.DataFrame,
 def test():
     from . import astro_time
     from datetime import datetime, timedelta, timezone 
-
     import public_astrostandards as PA
-    from public_astrostandards import helpers
     from . import test_helpers 
 
     PA.init_all()

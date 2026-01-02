@@ -6,7 +6,7 @@ import scipy.optimize
 from . import astro_time
 
 # -----------------------------------------------------------------------------------------------------
-def UDL_rotate_TEME_ob( O , harness ):
+def UDL_rotate_TEME_ob( udlob , harness ):
     '''
     given a single ob (O) with ra / declination fields (J2K), convert to TEME
 
@@ -17,9 +17,9 @@ def UDL_rotate_TEME_ob( O , harness ):
     harness.AstroFuncDll.RotRADec_EqnxToDate( 
                                         106,
                                         2,
-                                        O['ds50_utc'],
-                                        O['ra'],
-                                        O['declination'],
+                                        udlob['ds50_utc'],
+                                        udlob['ra'],
+                                        udlob['declination'],
                                         newRA,
                                         newDec )
     return ( np.float64(newRA),np.float64(newDec) )

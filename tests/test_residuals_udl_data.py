@@ -2,7 +2,7 @@
 # use with output from `UDLOB_to_B3_ROTAS` output from `weekly_dnd` code base
 # that code will use the ITAR astrostandards and ROTAS to get output; we can compare our tools here
 # ====================================================================================================
-
+import numpy as np
 import pandas as pd
 import public_astrostandards as PA
 import public_astrostandards_tools as PAT
@@ -15,6 +15,7 @@ def test():
 
     # test data
     test_data = pd.read_csv('~/Downloads/rotas_output.csv')
+    # test_data = test_data[ test_data['as_id'] > 0 ]
 
     # pull out the TLE (though each line has data, there should be one TLE)
     TLE1 = test_data['tle_line1'].unique()[0]
@@ -38,11 +39,14 @@ def test():
     
     compare = pd.DataFrame()
     for A,B in pairs:
+        compare[A] = output[A]
+        compare[B] = test_data[B]
         if 'range' in A: 
             compare['{}-{}'.format(A, B) ] = output[A] - test_data[B]
         else:
-            compare['{}-{}'.format(A, B) ] = 3600 * (output[A] - test_data[B])
-                     
+            compare['{}-{}_arcrad'.format(A, B) ] = 3600 * (output[A] - test_data[B])
+
+    print(compare)
     print(compare.describe())
 
 # =====================================================================================================

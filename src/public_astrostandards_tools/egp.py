@@ -23,8 +23,10 @@ def fileJob( fn , PA ):
         freq = job.get('spacing','5min') 
         dates = pd.date_range( job['min_date'], job['max_date'], freq=freq )
         output = doJob( job['line1'], job['line2'], dates, PA )
-        if output : job['egp'] = output.summarize_results()
-        else : job['egp'] = None
+        if output : 
+            job['egp'] = output.summarize_results()
+        else : 
+            job['egp'] = None
     return jobs
 
 # ----------------------------------------------------------------------------------------------------- 
@@ -73,7 +75,6 @@ if __name__ == '__main__':
     import public_astrostandards as PA
     import argparse
     import json
-    from . import astro_time
 
     PA.init_all()
 

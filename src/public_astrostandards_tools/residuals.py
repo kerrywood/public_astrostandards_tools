@@ -201,59 +201,15 @@ def slatton_intersection(
     B   = 2 * np.sum( rho * R, axis=1 )  # row-by-row of rho-dot-R
     C   = np.sum( R * R, axis=1 ) - RADIUS ** 2
     discrim = B**2 - 4 * A * C
-    R1 = -B + np.sqrt( discrim )
-    R2 = -B - np.sqrt( discrim )
+    R1  = -B + np.sqrt( discrim )
+    R2  = -B - np.sqrt( discrim )
     den = 2 * A
     # if discrim == 0: there is one solution for range (ex: ground-based looking at GEO)
     # if discrim < 0 : there is no solution for range (ex: GEO looking outside GEO)
     # if discrim > 0 : GEO looking through GEO sphere; two solutions for range
     return np.vstack( (R1 / den, R2 / den ) ).T
 
-# -----------------------------------------------------------------------------------------------------
-def test():
-    import os
-    import time
-    import public_astrostandards as PA
-    from . import test_helpers
-
-    print()
-    print('*'*100)
-    print('Running tests.')
-    print('*'*100)
-    print()
-
-    PA.init_all()
-
-    # load the stored time constants file 
-    astro_time.load_time_constants( test_helpers.get_test_time_constants(), PA )
-
-    # TLE data 
-    tleF     = os.path.join( test_helpers.get_data_dir(), '19548.tle' )
-    print('.. loading {}'.format( tleF ) )
-    #tleF     = os.path.join( test_helpers.get_data_dir(), '40294.tle' )
-    with open( tleF ) as F: lines = F.readlines()
-    L1 = lines[0].strip()
-    L2 = lines[1].strip()
-
-    # load obs 
-    #obsF      = os.path.join( test_helpers.get_data_dir(), '40294.json.gz' )
-    obsF      = '~/Downloads/obs_100k.json'
-    print('.. loading obs {}'.format( obsF ) )
-    obs_df    = pd.read_json( obsF )  # limit to 500k obs
-    # reformat UDL obs (these are our actual TEST obs ; from a sensor)
-    start_t   = time.time()
-    obs_df    = observations.prepUDLObs( obs_df, PA )
-    print('.. see {} obs'.format( obs_df.shape[0] ))
-    print('.. running ROTAS')
-    output = UDL_ROTAS( obs_df, L1, L2, PA )
-    print('That took {} seconds'.format( time.time() - start_t ) )
-    print(output)
-    return output
-
-# -----------------------------------------------------------------------------------------------------
-
-
 
 # =====================================================================================================
 if __name__ == '__main__':
-    test()
+    pass
