@@ -138,7 +138,7 @@ if __name__ == '__main__':
     import public_astrostandards as PA
     import argparse
     import json
-    from . import test_helpers
+    from . import utils
 
     parser = argparse.ArgumentParser(
         prog='TLE perturb-er',
@@ -169,7 +169,7 @@ if __name__ == '__main__':
 
     # init the public_astrostandards harness 
     PA.init_all()
-    astro_time.load_time_constants( test_helpers.get_test_time_constants(), PA )
+    astro_time.load_time_constants( utils.get_test_time_constants(), PA )
 
     # init the fitter
     TF = tle_fitter.tle_fitter( PA ).set_from_lines(args.line1, args.line2 ).set_satno(77777).set_type0()

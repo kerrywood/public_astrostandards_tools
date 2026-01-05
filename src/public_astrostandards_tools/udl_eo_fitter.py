@@ -186,7 +186,7 @@ if __name__ == '__main__':
     import argparse
     import json
     from . import astro_time
-    from . import test_helpers
+    from . import utils
 
     parser = argparse.ArgumentParser(
         prog='UDL EO obs fitter',
@@ -237,7 +237,7 @@ if __name__ == '__main__':
     # init the public_astrostandards harness 
     PA.init_all()
     #astro_time.load_time_constants('./reduced_time_constants.dat', PA )
-    astro_time.load_time_constants( test_helpers.get_test_time_constants(), PA )
+    astro_time.load_time_constants( utils.get_test_time_constants(), PA )
 
     # init the fitter
     FIT = eo_fitter( PA ) 

@@ -50,12 +50,12 @@ def test():
     import public_astrostandards as PA
     from . import astro_time
     from . import sgp4
-    from . import test_helpers
+    from . import utils
     from . import coordinates
 
     # init the astrostandards 
     PA.init_all()
-    astro_time.load_time_constants(  test_helpers.get_test_time_constants(), PA )
+    astro_time.load_time_constants(  utils.get_test_time_constants(), PA )
 
     # test TLE
     L1 = '1 25544U 98067A   25301.52216109  .00016210  00000-0  29595-3 0  9990'

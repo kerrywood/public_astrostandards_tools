@@ -22,7 +22,7 @@
 # SOFTWARE.
 # ###############################################################################
 
-import math
+import sys
 import os
 from datetime import datetime, timedelta, timezone
 import pandas as pd
@@ -44,8 +44,12 @@ def julian2dt( jd : float ):
 
 # -----------------------------------------------------------------------------------------------------
 def load_time_constants( filename : str, INTERFACE):
-    assert os.path.isfile( filename )
-    assert 0 == INTERFACE.TimeFuncDll.TimeFuncLoadFile( INTERFACE.Cstr(filename, 512 ) )
+    try:
+        assert os.path.isfile( filename )
+        assert 0 == INTERFACE.TimeFuncDll.TimeFuncLoadFile( INTERFACE.Cstr(filename, 512 ) )
+    except Exception as e:
+        print('Could not load time constants from : {}'.format( filename ) )
+        sys.exit(1)
 
 # -----------------------------------------------------------------------------------------------------
 def datetime_to_ds50( dt : list[ datetime ] , INTERFACE ):
@@ -77,14 +81,14 @@ def convert_times( datetimes : list[ datetime ] ,
 
 # -----------------------------------------------------------------------------------------------------
 def test():
-    from . import test_helpers
+    from . import utils
 
     import public_astrostandards as harness
     # init all the Dll's
     harness.init_all()
 
     # use the TimeFunc to load the time parameters file (need to upate this periodically    )
-    load_time_constants(  test_helpers.get_test_time_constants(), harness )
+    load_time_constants(  utils.get_test_time_constants(), harness )
 
     # generate some test data
     dates = pd.date_range(  datetime.now( timezone.utc ), 

@@ -11,19 +11,20 @@ def test():
     sen_lla = (38.83, -104.82, 1.832 )
     
     print('*' * 100)
-    print('This test code will use a historical TLE for ISS to generate look windows (a good reference design for other things')
     print('TLE:')
     print('\t{}\n\t{}'.format( *ISS ) )
     print('Date range:')
     print('\t{}\n\t{}'.format( dates[0], dates[-1] ))
-    print('Sensor location:')
-    print('\t lat: {:08.3f} lon : {:08.3f} alt : {:08.3f}'.format( *sen_lla ) )
     print('*' * 100)
+
     # init all the Dll's
     PA.init_all()
 
     # use the TimeFunc to load the time parameters file (need to upate this periodically)
     PAT.astro_time.load_time_constants(  PAT.utils.get_test_time_constants(), PA )
+
+    # PAT.sgp4.setLicensePath( '/opt/astrostandards', PA )
+    # print('License path: {}'.format( PAT.sgp4.getLicensePath( PA ) ) )
 
     # use the astro_time to initialize the dataframe with times
     # note that the sensor and target dataframes must be time aligned
@@ -50,16 +51,6 @@ def test():
     # >> note that we're only checking at those times that the sun is down << 
     # >> this limits the propagation calls (more efficient) <<
     target_f = PAT.sgp4.propTLE_df( sensor_sundown_dates, *ISS, PA ) 
-    # check if the target is sunlit... (annotate each row)
-    target_f['is_sunlit'] = PAT.sensor.is_sunlit( target_f, PA )
-    # now compute the actual looks....
-    looks_f = PAT.sensor.compute_looks( sensor_sundown_f, target_f, PA )
-
-    # note that here, _target is appended to a field we pushed into compute_looks
-    # so we look for _is_sunlit_target
-    good = looks_f[ (looks_f['XA_TOPO_EL'] > 5) * (looks_f['is_sunlit_target'] == 1 ) ] 
-    pd.set_option('display.max_rows', None)
-    print( good[['datetime_sensor','XA_TOPO_EL','XA_TOPO_AZ','XA_TOPO_RANGE','is_sunlit_target']] )
 
     
 # =====================================================================================================

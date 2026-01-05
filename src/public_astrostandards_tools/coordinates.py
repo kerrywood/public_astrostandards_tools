@@ -177,7 +177,7 @@ def test( ) :
     import public_astrostandards as PA
     from . import astro_time
     from . import sgp4
-    from . import test_helpers
+    from . import utils
 
     print('*'*100)
     print('Will convert random coordinates from one frame to another and back.. then quantify error')
@@ -186,7 +186,7 @@ def test( ) :
     # init the astrostandards (this starts logging)
     PA.init_all()
     # load the time constants
-    astro_time.load_time_constants(  test_helpers.get_test_time_constants(), PA )
+    astro_time.load_time_constants(  utils.get_test_time_constants(), PA )
     # test TLE lines
     L1 = '1 25544U 98067A   25301.52216109  .00016210  00000-0  29595-3 0  9990'
     L2 = '2 25544  51.6346   6.3420 0004740 349.4592  10.6297 15.49553329535849'

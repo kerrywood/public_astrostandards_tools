@@ -7,7 +7,7 @@ def test() :
     # init the astrostandards
     PA.init_all()
     # use the TimeFunc to load the time parameters file (need to upate this periodically)
-    PAT.astro_time.load_time_constants(  PAT.test_helpers.get_test_time_constants(), PA )
+    PAT.astro_time.load_time_constants(  PAT.utils.get_test_time_constants(), PA )
 
     # ////////////////////////////////////////////////////////////////////////////////////////////////////////////
     # some input TLE ; hand-modify a TLE as our "error orbit" (we'll use an error orbit to fake obs with noise)

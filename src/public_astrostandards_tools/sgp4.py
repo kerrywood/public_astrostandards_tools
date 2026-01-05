@@ -2,6 +2,17 @@ import numpy as np
 import pandas as pd
 
 # -----------------------------------------------------------------------------------------------------
+def getLicensePath( INTERFACE ):
+    path  = INTERFACE.Cstr('',512)
+    INTERFACE.Sgp4PropDll.Sgp4GetLicFilePath( path )
+    return path.value.decode('utf-8')
+
+# -----------------------------------------------------------------------------------------------------
+def setLicensePath( path, INTERFACE ):
+    assert len(path) <= 512
+    INTERFACE.Sgp4PropDll.Sgp4SetLicFilePath( INTERFACE.Cstr(path, 512) )
+
+# -----------------------------------------------------------------------------------------------------
 def addTLE( L1 : str, L2 : str, INTERFACE ):
     # load the TLE
     tleid = INTERFACE.TleDll.TleAddSatFrLines( 
@@ -74,11 +85,11 @@ def test():
     from . import astro_time
     from datetime import datetime, timedelta, timezone 
     import public_astrostandards as PA
-    from . import test_helpers 
+    from . import utils 
 
     PA.init_all()
 
-    astro_time.load_time_constants(  test_helpers.get_test_time_constants(), PA )
+    astro_time.load_time_constants(  utils.get_test_time_constants(), PA )
     
     # test TLE
     L1 = '1 25544U 98067A   24365.67842578  .00026430  00000-0  46140-3 0  9990'
