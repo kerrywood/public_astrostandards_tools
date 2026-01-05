@@ -147,9 +147,11 @@ def UDL_ROTAS( obs_df : pd.DataFrame,
     # -------------------- start the residual calc
     # now, generate hypothesis looks ( from sensor to eph frame )
     looks_df  = sensor.compute_looks( sensor_df, eph_df, PA )
+    
+    # ------------------- do a plane intersection for range...
     ranges, intersect_points = plane_intersection( eph_df, obs_df, sensor_df )
-    looks_df['guess_ranges'] = ranges
-    looks_df['guess_points'] = intersect_points.tolist()
+    looks_df['plane_intersect_range'] = ranges
+    looks_df['plane_intersect_points'] = intersect_points.tolist()
     residuals_df = residuals.UDL_residuals( obs_df, looks_df )
     residuals_df['plane_intersect_ranges']   = ranges
 

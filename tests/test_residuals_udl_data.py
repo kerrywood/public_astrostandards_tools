@@ -11,10 +11,11 @@ import public_astrostandards_tools as PAT
 def test():
     PA.init_all()
     # load the stored time constants file 
-    PAT.astro_time.load_time_constants( PAT.test_helpers.get_test_time_constants(), PA )
+    PAT.astro_time.load_time_constants( PAT.utils.get_test_time_constants(), PA )
 
-    # test data
+    # test data ( generated from `weeklies_dnd\utils` script; that generates ROTAS residuals using the ITAR methods)
     test_data = pd.read_csv('~/Downloads/rotas_output.csv')
+    print('See {} entries in test data set'.format( test_data.shape[0] ) )
     # test_data = test_data[ test_data['as_id'] > 0 ]
 
     # pull out the TLE (though each line has data, there should be one TLE)
@@ -37,16 +38,20 @@ def test():
              ( 'residual_range', 'XA_OBSRES_RANGE' )
     )
     
+    # make a frame to hold the comparison data...
     compare = pd.DataFrame()
     for A,B in pairs:
         compare[A] = output[A]
         compare[B] = test_data[B]
         if 'range' in A: 
-            compare['{}-{}'.format(A, B) ] = output[A] - test_data[B]
+            compare['{}-{}'.format(A, B)] = output[A] - test_data[B]
         else:
-            compare['{}-{}_arcrad'.format(A, B) ] = 3600 * (output[A] - test_data[B])
+            compare['{}-{}_arcsec'.format(A, B)] = 3600 * (output[A] - test_data[B])
 
-    print(compare)
+    # for each pair; print the values
+    for A,B in pairs:
+        print( compare[[A,B]] )
+
     print(compare.describe())
 
 # =====================================================================================================

@@ -67,6 +67,10 @@ def compute_looks(
         ds50_utc 
         lon
         theta
+        teme_p
+        lat
+        lon
+        height
 
     if you're a ground-based sensor, make sure to use LLH_to_TEME to annotate your frame with eci data
     if you're a space-based sensor, make sure you use TEME_to_LLH to get your lon field
@@ -81,13 +85,49 @@ def compute_looks(
 
     # check that the dates are aligned
     del_t = np.abs( df_target['ds50_utc'].values - df_sensor['ds50_utc'].values )
-    assert np.max(del_t) < 0.00001
+    assert np.max( np.abs(del_t) ) < 0.00001
     
     # concat the sensor and target dataframes and append suffixes
     tdf = pd.concat( (df_sensor.reset_index(drop=True).add_suffix('_sensor'), 
                       df_target.reset_index(drop=True).add_suffix('_target')), 
                       axis=1 )
     
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # MANUAL VERSION
+    # tar_pos = np.vstack( df_target['teme_p'] )
+    # sen_pos = np.vstack( df_sensor['teme_p'] )
+    
+    # # compute the TEME look vector
+    # teme_lv      = tar_pos - sen_pos
+    # teme_range   = np.linalg.norm( teme_lv, axis=1 )
+    # teme_lv_n    = teme_lv / teme_range[:,np.newaxis]
+
+    # # turn those into RA/DEC
+    # ra  = np.arctan( teme_lv_n[:,1], teme_lv_n[:,0] )
+    # dec = np.arctan( teme_lv_n[:,2] / np.sqrt( teme_lv_n[:,0] ** 2 + teme_lv_n[:,1] ** 2) )
+    # ra  = np.rad2deg( ra )
+    # dec = np.rad2deg( dec )
+    
+    # az = INTERFACE.ctypes.c_double()
+    # el = INTERFACE.ctypes.c_double()
+    
+    # # pre-allocate the storage for az / el calcs.. we'll call in a loop
+    # azel = np.zeros( (len(ra), 2) )
+    # for i, args in enumerate( zip( df_sensor['ds50_utc'], df_sensor['lat'], df_sensor['lon'], ra, dec) ):
+    #     INTERFACE.AstroFuncDll.RaDecToAzElTime( *args, az, el)
+    #     azel[i,0] = az.value
+    #     azel[i,1] = el.value
+    
+    # tdf['XA_TOPO_RA']    = ra
+    # tdf['XA_TOPO_DEC']   = dec
+    # tdf['XA_TOPO_AZ']    = azel[:,0]
+    # tdf['XA_TOPO_EL']    = azel[:,1]
+    # tdf['XA_TOPO_RANGE'] = teme_range
+    
+    # return tdf
+    
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # ECITopoComps VERSION
     def calcLooks( R ):
         lst = np.radians( R['lon_sensor'] ) + R['theta_sensor']
         if 'eci_v_target' in R: 
@@ -110,10 +150,6 @@ def compute_looks(
     ans =  pd.DataFrame.from_records( tdf.apply( calcLooks, axis=1 ).values )
     rv = pd.concat( (tdf.reset_index(drop=True),ans.reset_index(drop=True)), axis=1 ) 
 
-    # also compute the TEME look vector
-    teme_lv = np.vstack( rv['teme_p_target'] ) - np.vstack( rv['teme_p_sensor'] )
-    teme_lv = teme_lv / np.linalg.norm( teme_lv, axis=1 )[:,np.newaxis]
-    rv['teme_lv'] = teme_lv.tolist()
     return rv
 
 
