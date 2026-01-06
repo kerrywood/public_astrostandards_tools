@@ -1,8 +1,10 @@
 # ====================================================================================================
-# use with output from `UDLOB_to_B3_ROTAS` output from `weekly_dnd` code base
-# that code will use the ITAR astrostandards and ROTAS to get output; we can compare our tools here
+# use with output from `UDLOB_ROTAS_comparison` output from `weekly_dnd` code base
+# that code will use the ITAR astrostandards and ROTAS to generate residual data
+# that script takes some UDL observations (downloaded) and a TLE and calculates the residuals
+#
+# we'll compare that data with our homebrew ROTAS / residual calculator
 # ====================================================================================================
-import numpy as np
 import pandas as pd
 import public_astrostandards as PA
 import public_astrostandards_tools as PAT
@@ -23,7 +25,7 @@ def test():
     TLE2 = test_data['tle_line2'].unique()[0]
     
     # prep that for comparison
-    obs_df    = PAT.observations.prepUDLObs( test_data.copy(), PA )
+    obs_df = PAT.observations.prepUDLObs( test_data.copy(), PA )
 
     # calculate residuals using open source code
     output = PAT.residuals.UDL_ROTAS( obs_df, TLE1, TLE2, PA )
@@ -46,7 +48,7 @@ def test():
         if 'range' in A: 
             compare['{}-{}'.format(A, B)] = output[A] - test_data[B]
         else:
-            compare['{}-{}_arcsec'.format(A, B)] = 3600 * (output[A] - test_data[B])
+            compare['{}-{}_arcsec'.format(A, B)] = 3600 * PAT.residuals.shortestAngle(output[A] - test_data[B])
 
     # for each pair; print the values
     for A,B in pairs:

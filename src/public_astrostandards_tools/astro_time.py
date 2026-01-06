@@ -49,6 +49,7 @@ def load_time_constants( filename : str, INTERFACE):
         assert 0 == INTERFACE.TimeFuncDll.TimeFuncLoadFile( INTERFACE.Cstr(filename, 512 ) )
     except Exception as e:
         print('Could not load time constants from : {}'.format( filename ) )
+        print(e)
         sys.exit(1)
 
 # -----------------------------------------------------------------------------------------------------

@@ -1,8 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import numpy as np
 import pandas as pd
-import scipy.optimize
-
 from . import astro_time
 
 # -----------------------------------------------------------------------------------------------------

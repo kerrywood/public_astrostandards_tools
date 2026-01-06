@@ -28,7 +28,8 @@ def get_test_time_constants():
 # -----------------------------------------------------------------------------------------------------
 def update_time_constants( text ):
     PATH = get_test_time_constants()
-    with open( PATH, 'w' ) as F: F.write( text )
+    with open( PATH, 'w' ) as F: 
+        F.write( text )
     print('Saw {} lines in data'.format( len( text.split('\n') ) ) )
     print('Wrote to : {}'.format( PATH ) )
 
@@ -46,7 +47,6 @@ def update_from_github( ):
 # main
 # =====================================================================================================
 if __name__ == '__main__':
-    import sys
     import os 
     import argparse
 
@@ -82,7 +82,8 @@ if __name__ == '__main__':
         
     if args.updatefile:
         if os.path.isfile( args.updatefile):
-            with open( args.updatefile, 'r' ) as F: data = F.read()
+            with open( args.updatefile, 'r' ) as F: 
+                data = F.read()
             update_time_constants( data )
 
     if args.pullgithub:

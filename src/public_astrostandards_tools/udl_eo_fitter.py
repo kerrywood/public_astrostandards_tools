@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 import scipy.optimize
@@ -14,14 +13,17 @@ from . import residuals
 def optFunction( X, EH, return_scalar=True ):
     XS_TLE  = EH.PA.Cstr('',512)
     # take the function parameters (X) and overwrite the "new_tle" values based on FIELDS 
-    for k,v in zip(EH.FIELDS,X) :  EH.new_tle[ k ] = v
+    for k,v in zip(EH.FIELDS,X) : 
+        EH.new_tle[ k ] = v
     # --------------------- clear state
     EH.PA.TleDll.TleRemoveAllSats()
     EH.PA.Sgp4PropDll.Sgp4RemoveAllSats()
     # --------------------- init our test TLE from the modified data
     tleid = EH.PA.TleDll.TleAddSatFrArray( EH.new_tle.data, XS_TLE )
-    if tleid <= 0: return np.inf
-    if EH.PA.Sgp4PropDll.Sgp4InitSat( tleid ) != 0: return np.inf
+    if tleid <= 0: 
+        return np.inf
+    if EH.PA.Sgp4PropDll.Sgp4InitSat( tleid ) != 0: 
+        return np.inf
     # --------------------- generate our test ephemeris
     target_frame  = sgp4.propTLE_byID_df( tleid, EH.date_f, EH.PA )
     # --------------------- generate looks from our sensor positinos
@@ -32,7 +34,8 @@ def optFunction( X, EH, return_scalar=True ):
     rms = np.sum( resids['ra'].values ** 2 + resids['dec'].values**2 ) / (2 * N )
     rv  = np.sqrt( rms )
     print('RMS : {:10.7f}                '.format(rv), end='\r')
-    if return_scalar : return rv
+    if return_scalar : 
+        return rv
     return {'observations'  : EH.obs_df.to_dict(orient='records'), 
             'looks'         : looks.to_dict(orient='records'), 
             'initial_line1' : EH.line1, 
@@ -113,7 +116,8 @@ class eo_fitter( tle_fitter.tle_fitter ):
         if ans.success:
             self.reset_tle()
             # now update with perturbed values (not sure if this is necessary... last step should be there)
-            for k,v in zip(self.FIELDS,ans.x) : self.new_tle[k] = v
+            for k,v in zip(self.FIELDS,ans.x) : 
+                self.new_tle[k] = v
             self.final_answer = optFunction( ans.x, self, False )
             return True
         return False
@@ -253,9 +257,12 @@ if __name__ == '__main__':
     # add in the data
     FIT = FIT.set_data( args.line1, args.line2, obs ).set_satno(args.satno)
 
-    if args.type == 0 : FIT.set_type0()
-    if args.type == 2 : FIT.set_type2()
-    if args.type == 4 : FIT.set_type4()
+    if args.type == 0 : 
+        FIT.set_type0()
+    if args.type == 2 :
+        FIT.set_type2()
+    if args.type == 4 : 
+        FIT.set_type4()
 
     # always set your non-conservatives last
     if args.type == 4:
@@ -272,11 +279,14 @@ if __name__ == '__main__':
     # do the solve
     converged = FIT.fit_tle()
     if converged:
-        if args.verbose: rv = FIT.final_answer
-        else: rv = {}
+        if args.verbose: 
+            rv = FIT.final_answer
+        else: 
+            rv = {}
         nl1, nl2 = FIT.getLines()
         print('\n\nNew TLE:\n{}\n{}'.format( nl1, nl2 ) )
         rv.update({ 'new_line1' : nl1, 'new_line2' : nl2 })
-        with open( args.outfile, 'wt') as F: json.dump( rv, F, default=str )
+        with open( args.outfile, 'wt') as F: 
+            json.dump( rv, F, default=str )
     else:
         print('Did not converge')

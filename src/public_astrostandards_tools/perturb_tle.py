@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from . import astro_time
 from . import sgp4
 from . import orbit_utils
@@ -178,9 +177,12 @@ if __name__ == '__main__':
     # if this is a RIC call
     if args.RIC:
         ric = json.loads( args.RIC )
-        if args.satno : newtle = perturbTLE( TF, ric, args.satno )
-        else : newtle = perturbTLE( TF, ric )
+        if args.satno : 
+            newtle = perturbTLE( TF, ric, args.satno )
+        else : 
+            newtle = perturbTLE( TF, ric )
         print()
         print('{}\n{}'.format( args.line1, args.line2 ) )
-        for t in newtle: print('\n'.join(t))
+        for t in newtle: 
+            print('\n'.join(t))
         sys.exit()

@@ -1,9 +1,4 @@
-import time
-from datetime import datetime, timedelta
-import ctypes
 import numpy as np
-import scipy.optimize
-from . import sgp4
 from . import orbit_utils
 
 # what fields will we optimize over?  This doubles as a field accessor list for the optimizer..
@@ -63,7 +58,8 @@ def TLE_str_to_XA_TLE( L1 : str, L2 : str , PA ):
     # load the TLE
     PA.TleDll.TleRemoveAllSats()
     tleid = PA.TleDll.TleAddSatFrLines( PA.Cstr(L1,512), PA.Cstr(L2,512) )
-    if tleid <=0 : return None
+    if tleid <=0 : 
+        return None
     XA_TLE = PA.helpers.astrostd_named_fields( PA.TleDll, prefix='XA_TLE_') 
     XS_TLE = PA.Cstr('',512)
     PA.TleDll.TleDataToArray( tleid, XA_TLE.data, XS_TLE )  # <--- note that you pass the "data" holder in
@@ -162,7 +158,8 @@ class tle_fitter:
         return self
 
     def clear_nonconservatives( self ):
-        for F in NON_CONSERVATIVES: self.new_tle[F] = 0.
+        for F in NON_CONSERVATIVES: 
+            self.new_tle[F] = 0.
         return self
 
     def set_from_sv( self, sv ):
@@ -209,10 +206,7 @@ class tle_fitter:
 
 # -----------------------------------------------------------------------------------------------------
 def test():
-    import pandas as pd
     import public_astrostandards as PA
-    from . import astro_time
-    from . import sgp4
 
     # test that we can init
     PA.init_all()

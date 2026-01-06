@@ -1,5 +1,4 @@
 import ctypes
-from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 
@@ -12,6 +11,11 @@ Key dataframe names (semi-canonical):
     efg_p       : EFG position vector
     efg_v       : EFG velocity vector
 '''
+
+# rough WGS84 constants for geod
+EARTH_RAD_EQUATOR = 6378.1
+EARTH_RAD_POLE    = 6356.8
+AoverB_sq         = ( EARTH_RAD_EQUATOR / EARTH_RAD_POLE ) ** 2
 
 # -----------------------------------------------------------------------------------------------------
 def TEME_to_J2K( teme: pd.DataFrame , harness ):
@@ -171,6 +175,16 @@ def EFG_to_TEME( df : list[ float ],
     df['teme_p'] = [ T[0] for T in tv ]
     df['teme_v'] = [ T[1] for T in tv ]
     return df
+
+# -----------------------------------------------------------------------------------------------------
+def lat_to_astronomical_lat( lat : list[ float ] ):
+    lat_deg = np.deg2rad( lat )
+    return np.rad2deg( 
+                      np.arctan( 
+                                AoverB_sq * np.tan( lat_deg)
+                                ) 
+                      )
+    
 
 # -----------------------------------------------------------------------------------------------------
 def test( ) :

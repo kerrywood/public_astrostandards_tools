@@ -1,10 +1,5 @@
 import os
-import time
-from datetime import datetime, timedelta
-import ctypes
-import numpy as np
 import pandas as pd
-from . import astro_time
 from . import ephem_fitter
 
 # ----------------------------------------------------------------------------------------------------- 
@@ -132,9 +127,12 @@ if __name__ == '__main__':
         assert  args.type  in set([0,2,4])
         dates = pd.date_range( args.startdate, args.enddate, freq=args.spacing )
         EH = ephem_fitter.ephem_fitter( PA ).set_from_tle( args.line1, args.line2, dates )
-        if args.type == 0: EH.set_type0()
-        if args.type == 2: EH.set_type2()
-        if args.type == 4: EH.set_type4()
+        if args.type == 0: 
+            EH.set_type0()
+        if args.type == 2: 
+            EH.set_type2()
+        if args.type == 4: 
+            EH.set_type4()
         EH.set_satno( args.satno )
 
         print()

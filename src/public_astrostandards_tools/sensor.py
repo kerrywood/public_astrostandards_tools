@@ -1,4 +1,3 @@
-import sys
 import ctypes
 import numpy as np
 import pandas as pd
@@ -14,7 +13,6 @@ def sun_at_time(  df : pd.DataFrame, # must have the times set
     sun_v  = (ctypes.c_double * 3)()
     sun_m  = ctypes.c_double()
     # the routine gives us a look vector and magnitude
-    sun_p = (ctypes.c_double * 3)( * (np.array( sun_v ) * sun_m ) )
     # compute the sun location at times 
     def getSun( X ):
         INTERFACE.AstroFuncDll.CompSunPos( X, sun_v, sun_m ) 
@@ -33,7 +31,6 @@ def moon_at_time(  df : pd.DataFrame, # must have the times set
     sun_v  = (ctypes.c_double * 3)()
     sun_m  = ctypes.c_double()
     # the routine gives us a look vector and magnitude
-    sun_p = (ctypes.c_double * 3)( * (np.array( sun_v ) * sun_m ) )
     # compute the sun location at times 
     def getMoon( X ):
         INTERFACE.AstroFuncDll.CompMoonPos( X, sun_v, sun_m ) 
@@ -48,7 +45,6 @@ def is_sunlit(  df : pd.DataFrame,
 
     NOTE: this does not annotate or return a DataFrame; it just returns an array of positions
     '''
-    teme_p = (ctypes.c_double * 3)()
     def closure( ds50_et, teme ):
         tt = (ctypes.c_double * 3)(* teme )
         return INTERFACE.AstroFuncDll.IsPointSunlit( ds50_et, tt )
@@ -87,10 +83,17 @@ def compute_looks(
     del_t = np.abs( df_target['ds50_utc'].values - df_sensor['ds50_utc'].values )
     assert np.max( np.abs(del_t) ) < 0.00001
     
+    # the ECIToTopoComps call relies on astronomical latitude; if it isn't in the frame.. calculate it
+    if 'astrolat' not in df_sensor:
+        df_sensor['astrolat'] = coordinates.lat_to_astronomical_lat( df_sensor['lat'] )
+    print( df_sensor[['lat','astrolat']])
+    
     # concat the sensor and target dataframes and append suffixes
     tdf = pd.concat( (df_sensor.reset_index(drop=True).add_suffix('_sensor'), 
                       df_target.reset_index(drop=True).add_suffix('_target')), 
                       axis=1 )
+    
+
     
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     # MANUAL VERSION
@@ -138,7 +141,7 @@ def compute_looks(
             eci_v_target = (ctypes.c_double * 3)(0,0,0)
 
         INTERFACE.AstroFuncDll.ECIToTopoComps( lst,
-                                               R['lat_sensor'],
+                                               R['astrolat_sensor'],
                                                (ctypes.c_double * 3) (*R['teme_p_sensor']),
                                                (ctypes.c_double * 3) (*R['teme_p_target']),
                                                eci_v_target,

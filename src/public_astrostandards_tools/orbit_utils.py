@@ -1,8 +1,7 @@
 import ctypes 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
-import copy
 
 # -----------------------------------------------------------------------------------------------------
 _DSEPOCH = datetime(year=1950,month=1,day=1)
@@ -22,7 +21,8 @@ def getRIC( sv ):
 # -----------------------------------------------------------------------------------------------------
 def XA_TLE_to_str( XA_TLE, harness, satno=None ):
     TSTR = harness.Cstr('',512)
-    if satno : XA_TLE['XA_TLE_SATNUM'] = satno
+    if satno : 
+        XA_TLE['XA_TLE_SATNUM'] = satno
     nL1, nL2 = harness.Cstr('',512),harness.Cstr('',512)
     harness.TleDll.TleGPArrayToLines( XA_TLE.data, TSTR, nL1, nL2 )
     return nL1.value.decode('utf-8').strip(), nL2.value.decode('utf-8').strip()

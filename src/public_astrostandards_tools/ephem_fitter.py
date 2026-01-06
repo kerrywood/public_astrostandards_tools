@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 import numpy as np
 import pandas as pd
 import scipy.optimize
@@ -13,14 +13,17 @@ def optFunction( X, EH, return_scalar=True ):
     PA      = EH.PA
     XS_TLE  = PA.Cstr('',512)
     # take the function parameters (X) and overwrite the "new_tle" values based on FIELDS 
-    for k,v in zip(EH.FIELDS,X) :  EH.new_tle[ k ] = v
+    for k,v in zip(EH.FIELDS,X) :  
+        EH.new_tle[ k ] = v
     # --------------------- clear state
     PA.TleDll.TleRemoveAllSats()
     PA.Sgp4PropDll.Sgp4RemoveAllSats()
     # --------------------- init our test TLE from the modified data
     tleid = PA.TleDll.TleAddSatFrArray( EH.new_tle.data, XS_TLE )
-    if tleid <= 0: return np.inf
-    if PA.Sgp4PropDll.Sgp4InitSat( tleid ) != 0: return np.inf
+    if tleid <= 0: 
+        return np.inf
+    if PA.Sgp4PropDll.Sgp4InitSat( tleid ) != 0: 
+        return np.inf
     # --------------------- generate our test ephemeris
     test_eph = sgp4.propTLEToDS50s( tleid, EH.truth_date, PA )
     # use numpy to return the distance between our hypothesis and truth
@@ -43,7 +46,7 @@ class ephem_fitter( tle_fitter.tle_fitter ):
 
     def _init_fields( self ):
         # pick one of those points as the new epoch (put it in the middle)   # <----- epoch and sv choice
-        if self.epoch_idx == None:
+        if self.epoch_idx is None:
             self.epoch_idx = self.truth_df.shape[0]//2 
         epoch_sv        = self.truth_df.iloc[ self.epoch_idx ]
         self.set_from_sv( epoch_sv )
