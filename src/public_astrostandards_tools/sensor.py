@@ -86,7 +86,6 @@ def compute_looks(
     # the ECIToTopoComps call relies on astronomical latitude; if it isn't in the frame.. calculate it
     if 'astrolat' not in df_sensor:
         df_sensor['astrolat'] = coordinates.lat_to_astronomical_lat( df_sensor['lat'] )
-    print( df_sensor[['lat','astrolat']])
     
     # concat the sensor and target dataframes and append suffixes
     tdf = pd.concat( (df_sensor.reset_index(drop=True).add_suffix('_sensor'), 

@@ -16,7 +16,7 @@ def test():
     PAT.astro_time.load_time_constants( PAT.utils.get_test_time_constants(), PA )
 
     # test data ( generated from `weeklies_dnd\utils` script; that generates ROTAS residuals using the ITAR methods)
-    test_data = pd.read_csv('~/Downloads/rotas_output.csv')
+    test_data = pd.read_csv('~/Downloads/rotas_output_rando.csv')
     print('See {} entries in test data set'.format( test_data.shape[0] ) )
     # test_data = test_data[ test_data['as_id'] > 0 ]
 
