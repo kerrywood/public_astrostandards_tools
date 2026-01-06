@@ -18,13 +18,10 @@ def test():
     print('*' * 100)
 
     # init all the Dll's
-    PA.init_all()
+    # PA.init_all()
 
     # use the TimeFunc to load the time parameters file (need to upate this periodically)
-    PAT.astro_time.load_time_constants(  PAT.utils.get_test_time_constants(), PA )
-
-    # PAT.sgp4.setLicensePath( '/opt/astrostandards', PA )
-    # print('License path: {}'.format( PAT.sgp4.getLicensePath( PA ) ) )
+    # PAT.astro_time.load_time_constants(  PAT.utils.get_test_time_constants(), PA )
 
     # use the astro_time to initialize the dataframe with times
     # note that the sensor and target dataframes must be time aligned
@@ -32,25 +29,11 @@ def test():
     # make a target dates from that is identical
     target_f = dates_f.copy()
 
-    # -----------------------------------------------------------------------------------------------------
-    # TEST case 1 : look vectors to sun; find out when sun is down
-    # make a sensor frame
-    sensor_f = PAT.sensor.setup_ground_site( dates_f.copy(), *sen_lla, PA )
-    # annotate that dataframe wih the sun position (why not make this a routine?  Because we can re-use sun position at these times.)
-    target_f['teme_p']  = PAT.sensor.sun_at_time( dates_f, PA ) 
-    # compute looks to the sun
-    looks_f = PAT.sensor.compute_looks( sensor_f, target_f, PA )
-    # find those times when the sun is down; NOTE we're indexing subsets of the DATE and SENSOR frame
-    sensor_sundown_f = sensor_f[ looks_f['XA_TOPO_EL'] < -4 ].copy()
-    sensor_sundown_dates = sensor_sundown_f[ PAT.astro_time.DATE_FIELDS ].copy()
+    # manually set the license path (oddly, setting a bad path seems to work)
+    PAT.sgp4.setLicensePath( '', PA ) 
+    print('License path: {}'.format( PAT.sgp4.getLicensePath( PA ) ) )
 
-    # -----------------------------------------------------------------------------------------------------
-    # TEST case 2 : now that we know when sun is down, can we find those times when ISS is visible?
-    # for now, ignore if it is solar illuminated
-    # re-use the dates  
-    # >> note that we're only checking at those times that the sun is down << 
-    # >> this limits the propagation calls (more efficient) <<
-    target_f = PAT.sgp4.propTLE_df( sensor_sundown_dates, *ISS, PA ) 
+    target_f = PAT.sgp4.propTLE_df( dates_f.copy(), *ISS, PA ) 
 
     
 # =====================================================================================================
