@@ -17,7 +17,7 @@ def test():
     print('*' * 100)
 
     # init all the Dll's
-    PA.init_all()
+    PA.init_all( )
 
     # use the TimeFunc to load the time parameters file (need to upate this periodically)
     PAT.astro_time.load_time_constants(  PAT.utils.get_test_time_constants(), PA )
@@ -26,7 +26,8 @@ def test():
     dates_f = PAT.astro_time.convert_times( dates, PA )
 
     # manually set the license path (oddly, setting a bad path seems to work)
-    PAT.sgp4.setLicensePath( 'C:/', PA ) 
+    #PAT.sgp4.setLicensePath( 'C:/', PA ) 
+    #PAT.sgp4.setLicensePath( '', PA ) 
     print('License path: {}'.format( PAT.sgp4.getLicensePath( PA ) ) )
 
     target_f = PAT.sgp4.propTLE_df( dates_f.copy(), *ISS, PA ) 
