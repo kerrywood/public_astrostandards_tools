@@ -32,7 +32,7 @@ Data science examples are available in the [notebooks](./docs/notebooks).
 
 Some utilities have been built as command line tools for convenience.  Always looking for suggestions on new additions.
 
-[EGP](./docs/test.md) : re-epoch a TLE or convert the type (or both)
+[EGP](./docs/egp.md) : re-epoch a TLE or convert the type (or both)
 
 [perturb tle](./docs/perturb_tle.md) : perturb a TLE at epoch with RIC changes
 
