@@ -2,6 +2,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from . import astro_time
+from . import coordinates
 
 # -----------------------------------------------------------------------------------------------------
 def UDL_rotate_TEME_ob( udlob , harness ):
@@ -79,3 +80,86 @@ def synthetic_to_UDL_like(
     sensor_df['senalt']   = sensor_df['height']
     sensor_df['teme_lv']  = ra_dec_to_lv( sensor_df['teme_ra'], sensor_df['teme_dec'] ).tolist()
     return sensor_df
+
+# -----------------------------------------------------------------------------------------------------
+def val_mapper( val, digits=5 ):
+    modu = 10 ** digits
+    try: 
+        return int( val ) % modu
+    except:
+        pass
+    try:  
+        return abs(hash(s)) % mod   
+    except: pass
+    return 99999
+
+# -----------------------------------------------------------------------------------------------------
+def satNo( ob : dict ):
+    if 'satNo' in ob :
+        return val_mapper( ob['satNo'] )
+    if 'origObjectId' in ob:
+        return val_mapper( ob['origObjectId'] )
+    if 'idOnOrbit' in ob:
+        return val_mapper( ob['idOnOrbit'] )
+    return 999
+
+# -----------------------------------------------------------------------------------------------------
+def idSensor( ob : dict ):
+    if 'idSensor' in ob:
+        return val_mapper( ob['idSensor'] )
+    return 999
+
+# -----------------------------------------------------------------------------------------------------
+# convert UDL obs to B3 using the astrostandards; assume you pass in a helper to avoid rebuilding it
+def UDLEOObtoB3Type9( ob : dict, OBSHELPER, harness ):
+    # these obs should already have been converted to EFG
+    assert 'efg_p' in ob
+    efgx,efgy,efgz = ob['efg_p']
+    # get the satNo we should use (modify the function above to change)
+    satno = satNo( ob )
+    OBSHELPER.clear()
+    OBSHELPER['XA_OBS_SECCLASS']  = 1 
+    OBSHELPER['XA_OBS_SATNUM']    = satno
+    OBSHELPER['XA_OBS_SITETAG']   = satno
+    OBSHELPER['XA_OBS_SPADOCTAG'] = satno
+    OBSHELPER['XA_OBS_SENNUM']    = ob['fake_sensor_number'] if 'fake_sensor_number' in ob else idSensor( ob )
+    OBSHELPER['XA_OBS_DS50UTC']   = ob['ds50_utc']
+    OBSHELPER['XA_OBS_ELORDEC']   = ob['declination']
+    OBSHELPER['XA_OBS_AZORRA']    = ob['ra']
+    OBSHELPER['XA_OBS_POSX']      = efgx
+    OBSHELPER['XA_OBS_POSY']      = efgy
+    OBSHELPER['XA_OBS_POSZ']      = efgz
+    OBSHELPER['XA_OBS_OBSTYPE']   = 9 
+    OBSHELPER['XA_OBS_TRACKIND']  = ob['track_indicator'] if 'track_indicator' in ob else 3
+    OBSHELPER['XA_OBS_YROFEQNX']  = 2 # J2K equinox
+    # --------------- inject into the astrostandards
+    ob['asObId']                  = harness.ObsDll.ObsAddFrArray( OBSHELPER.getData() )
+    
+    # --------------- check for failure, print
+    if ob['asObId'] < 0 : 
+        print('----------------------------------------- ERROR -----------------------------------------')
+        print( json.dumps( ob, indent=4, default=str ) ) 
+        print( OBSHELPER.toDict() )
+    
+    # --------------- extract and return the B3
+    b3str = harness.Cstr('',512)
+    if harness.ObsDll.ObsGetB3Card( ob['asObId'], b3str ) != 0: 
+        return 'ERR'
+    return b3str.value.decode('utf-8').rstrip()
+
+# -----------------------------------------------------------------------------------------------------
+# convert UDL obs to B3 using the astrostandards; assume you pass in a helper to avoid rebuilding it
+def UDLEOObstoB3Type9( obs_df, harness ):
+    # setup times and convert coordinates (though we won't use that)
+    obs_df = prepUDLObs( obs_df, harness )
+    # copy fields (UDL calls them senlat, senlon, senalt.. we need lat, lon, height)
+    # we could rename them, but this preseves data all the way through at the expense of duplication
+    obs_df['lat']    = obs_df['senlat']
+    obs_df['lon']    = obs_df['senlon']
+    obs_df['height'] = obs_df['senalt']
+    # convert to EFG (for type9)
+    obs_df = coordinates.LLH_to_EFG( obs_df, harness )
+    OBSHELPER = harness.helpers.astrostd_named_fields( harness.ObsDll, prefix='XA_OBS_' )
+    b3 = obs_df.apply( lambda udlob: UDLEOObtoB3Type9(udlob,OBSHELPER,harness), axis=1 )
+    obs_df['B3'] = b3.tolist()
+    return obs_df
