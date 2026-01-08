@@ -46,6 +46,8 @@ Some utilities have been built as command line tools for convenience.  Always lo
 
 [UDL EO fitter](/docs/udl_eo_fitter.md) : using EO observations from the UDL, perform OD on a TLE
 
+[UDL EO B3 converter](/docs/udlob_to_b3.md) : take raw UDL obs and convert them to B3
+
 ## Test code
 
 There are lots of test routines that help me debug located in [./tests](./tests)
